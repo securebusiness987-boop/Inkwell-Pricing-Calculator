@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A guided pricing calculator for illustrators: hourly rate, usage rights, rush fees, revisions and a client-ready quote.">
+<title>Inkwell — illustration pricing calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#F3F4FA; --surface:#FFFFFF; --surface-2:#F6F7FC; --ink:#171B3A; --muted:#5A6083;
+  --line:#E0E3F0; --accent:#3A4BDB; --accent-ink:#FFFFFF; --accent-soft:#E8EBFE;
+  --ok:#14806A; --warn:#A8620A;
+  --slip:#171B3A; --slip-ink:#F3F4FF; --slip-muted:#A9B0D8; --slip-line:rgba(243,244,255,.22);
+  --shadow:0 1px 2px rgba(23,27,58,.06),0 16px 36px -16px rgba(23,27,58,.22);
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"Instrument Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1128; --surface:#171B3B; --surface-2:#1D2247; --ink:#EEF0FF; --muted:#9EA5CE;
+    --line:#2B3163; --accent:#8F9CFF; --accent-ink:#0E1128; --accent-soft:#262D66;
+    --ok:#52D9B7; --warn:#F5B94A;
+    --slip:#252C63; --slip-ink:#F3F4FF; --slip-muted:#AEB5DE; --slip-line:rgba(243,244,255,.22);
+    --shadow:0 18px 44px -16px rgba(0,0,0,.65);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1128; --surface:#171B3B; --surface-2:#1D2247; --ink:#EEF0FF; --muted:#9EA5CE;
+  --line:#2B3163; --accent:#8F9CFF; --accent-ink:#0E1128; --accent-soft:#262D66;
+  --ok:#52D9B7; --warn:#F5B94A;
+  --slip:#252C63; --slip-ink:#F3F4FF; --slip-muted:#AEB5DE; --slip-line:rgba(243,244,255,.22);
+  --shadow:0 18px 44px -16px rgba(0,0,0,.65);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.wrap{max-width:1160px;margin:0 auto;padding:20px 20px 120px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0 28px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:-.02em}
+.brand svg{width:30px;height:30px;color:var(--accent)}
+.top-actions{display:flex;align-items:center;gap:8px}
+.top select{height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);padding:0 10px;font-weight:600}
+.pill-btn{height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:600}
+.pill-btn:hover{border-color:var(--accent)}
+.icon-sq{width:40px;padding:0;display:grid;place-items:center}
+.icon-sq svg{width:18px;height:18px}
+.intro{max-width:640px;margin-bottom:28px}
+.intro h1{font-family:var(--display);font-size:clamp(30px,5vw,46px);line-height:1.05;letter-spacing:-.03em;margin:0 0 12px;font-weight:700;text-wrap:balance}
+.intro p{margin:0;color:var(--muted);font-size:17px}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:32px;align-items:start}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:26px 28px 28px;box-shadow:var(--shadow);min-width:0}
+
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:28px}
+.step{background:none;border:0;padding:0;text-align:left;display:grid;gap:8px;color:var(--muted);font-weight:600;font-size:14px}
+.s-bar{height:5px;border-radius:5px;background:var(--line);transition:background .25s}
+.step.done .s-bar,.step[aria-current="step"] .s-bar{background:var(--accent)}
+.step[aria-current="step"]{color:var(--ink)}
+.s-n{display:none}
+.step .s-t{display:flex;gap:6px;align-items:center}
+.step .s-t i{font-style:normal;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);font-size:11px}
+.step[aria-current="step"] .s-t i,.step.done .s-t i{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+.pane h2{font-family:var(--display);font-size:28px;line-height:1.1;letter-spacing:-.02em;margin:0 0 8px;font-weight:700}
+.lead{margin:0 0 22px;color:var(--muted);max-width:60ch}
+.label{font-weight:600;margin:22px 0 10px}
+.hint{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.fields{display:grid;gap:18px}
+.fields.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.field>label{display:block;font-weight:600;margin-bottom:6px;font-size:15px}
+.inp{display:flex;align-items:center;height:48px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface-2);padding:0 12px;gap:8px;transition:border-color .15s,box-shadow .15s}
+.inp:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.inp input,.inp select{border:0;background:transparent;outline:0;width:100%;height:100%;min-width:0;font-weight:500}
+.inp select{cursor:pointer}
+.inp .pre,.inp .suf{color:var(--muted);font-weight:600;flex:none}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+.stepper{display:flex;align-items:center;height:48px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface-2);overflow:hidden}
+.stepper button{width:48px;height:100%;border:0;background:transparent;font-size:20px;font-weight:600;color:var(--accent)}
+.stepper button:hover{background:var(--accent-soft)}
+.stepper input{flex:1;min-width:0;width:100%;text-align:center;border:0;background:transparent;outline:0;font-weight:600}
+
+.seg{display:inline-flex;padding:4px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);margin-bottom:22px;max-width:100%}
+.seg button{border:0;background:transparent;padding:9px 16px;border-radius:10px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(23,27,58,.18)}
+
+.opts{display:grid;gap:10px}
+.opts.cols2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.opts.cols3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.opt{display:grid;grid-template-columns:1fr auto;gap:3px 10px;text-align:left;padding:14px 16px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--accent)}
+.opt-t{grid-area:1/1;font-weight:650;display:flex;align-items:center}
+.opt-t::before{content:"";flex:none;width:16px;height:16px;border-radius:50%;border:2px solid var(--line);margin-right:10px;transition:all .15s}
+.opt-m{grid-area:1/2;font-weight:650;color:var(--accent);font-size:14px;align-self:center}
+.opt-d{grid-area:2/1/3/3;color:var(--muted);font-size:13.5px;padding-left:26px}
+.opt[aria-checked="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.opt[aria-checked="true"] .opt-t::before{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 3px var(--accent-soft)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips .opt{padding:9px 16px;border-radius:999px;display:flex;gap:8px;align-items:center}
+.chips .opt-t::before{display:none}
+.chips .opt-m{color:var(--muted);font-weight:500}
+.chips .opt[aria-checked="true"] .opt-m{color:var(--ink)}
+
+.result{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 24px;margin-top:26px;padding:20px 22px;border-radius:18px;background:var(--accent-soft)}
+.result-l{font-size:14px;color:var(--muted);font-weight:600}
+.result-n{font-family:var(--display);font-weight:700;font-size:44px;line-height:1.05;letter-spacing:-.03em}
+.result-side{color:var(--muted);font-size:14px;max-width:24ch}
+.note{margin:14px 0 0;padding:12px 14px;border-radius:12px;background:var(--surface-2);border:1px dashed var(--line);font-size:14px;color:var(--muted)}
+details.explain{margin-top:18px;border:1px solid var(--line);border-radius:14px;padding:12px 16px;background:var(--surface-2)}
+details.explain summary{cursor:pointer;font-weight:600}
+details.explain p{margin:10px 0 0;color:var(--muted);font-size:14.5px}
+
+.sub-h{font-family:var(--display);font-size:19px;font-weight:650;margin:30px 0 4px;letter-spacing:-.01em}
+.row{display:grid;gap:8px;align-items:center;margin-top:10px}
+.addon{grid-template-columns:auto minmax(0,1fr) 128px 104px 40px}
+.expense{grid-template-columns:minmax(0,1fr) 150px 40px}
+.row input[type=text],.row input[type=number],.row select{height:44px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface-2);padding:0 10px;min-width:0;width:100%}
+.row input:focus,.row select:focus{border-color:var(--accent);outline:0;box-shadow:0 0 0 3px var(--accent-soft)}
+.valbox{display:flex;align-items:center;gap:6px}
+.valbox .unit{color:var(--muted);font-weight:600;min-width:1.2em}
+.check input{position:absolute;opacity:0;width:24px;height:24px;margin:0}
+.check{position:relative;display:block;width:24px;height:24px}
+.check .box{display:block;width:24px;height:24px;border-radius:8px;border:2px solid var(--line);background:var(--surface-2);transition:all .15s}
+.check input:checked+.box{background:var(--accent);border-color:var(--accent)}
+.check input:checked+.box::after{content:"";display:block;width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:translate(7px,2px) rotate(45deg)}
+.check input:focus-visible+.box{outline:2px solid var(--accent);outline-offset:2px}
+.icon-btn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:20px;line-height:1}
+.icon-btn:hover{color:var(--ink);border-color:var(--ink)}
+.add-link{margin-top:12px;border:1.5px dashed var(--line);background:transparent;border-radius:12px;padding:10px 16px;font-weight:600;color:var(--accent)}
+.add-link:hover{border-color:var(--accent);background:var(--accent-soft)}
+
+textarea.qt{width:100%;min-height:330px;resize:vertical;border:1.5px solid var(--line);border-radius:14px;background:var(--surface-2);padding:16px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.6}
+.btn{height:48px;padding:0 22px;border-radius:14px;border:1.5px solid transparent;font-weight:650;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.light{background:var(--slip-ink);color:var(--slip);width:100%}
+.btn.light:hover{filter:brightness(.94)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.foot{display:flex;justify-content:space-between;gap:12px;margin-top:30px;padding-top:22px;border-top:1px solid var(--line)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+
+/* the quote slip */
+.slip{position:sticky;top:16px;background:var(--slip);color:var(--slip-ink);border-radius:28px;padding:26px;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.06)}
+.slip :focus-visible{outline-color:var(--slip-ink)}
+.slip-h{display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--slip-muted);font-weight:600;font-size:14px}
+.tier-tag{padding:3px 11px;border-radius:999px;border:1px solid var(--slip-line);color:var(--slip-ink);font-size:13px}
+.total{font-family:var(--display);font-weight:700;font-size:clamp(46px,7vw,60px);line-height:1;letter-spacing:-.04em;margin:18px 0 6px;overflow-wrap:anywhere}
+.total-sub{color:var(--slip-muted);font-size:14px;min-height:21px}
+.anat{display:flex;gap:3px;height:16px;margin:22px 0 16px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.1)}
+.anat span{flex:0 0 0%;background:var(--sc);transition:flex-basis .45s cubic-bezier(.2,.8,.2,1)}
+[data-seg="creative"]{--sc:#8392FF}
+[data-seg="revisions"]{--sc:#C29BFF}
+[data-seg="license"]{--sc:#FFC247}
+[data-seg="rush"]{--sc:#FF7F7F}
+[data-seg="extras"]{--sc:#44D6B5}
+[data-seg="expenses"]{--sc:#9AA5D1}
+[data-seg="minfee"]{--sc:#F4F5FF}
+.legend{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.legend li{display:flex;align-items:center;gap:10px;font-size:15px}
+.legend i{width:11px;height:11px;border-radius:4px;background:var(--sc);flex:none}
+.legend .n{flex:1;color:var(--slip-muted)}
+.legend .v{font-weight:650;font-variant-numeric:tabular-nums}
+.perf{position:relative;margin:22px -26px;border-top:2px dashed var(--slip-line)}
+.perf::before,.perf::after{content:"";position:absolute;top:-14px;width:26px;height:26px;border-radius:50%;background:var(--bg)}
+.perf::before{left:-13px}.perf::after{right:-13px}
+.sums{margin:0;display:grid;gap:8px}
+.sums div{display:flex;justify-content:space-between;gap:10px;font-size:15px}
+.sums dt{color:var(--slip-muted)}
+.sums dd{margin:0;font-weight:650;font-variant-numeric:tabular-nums}
+.eff{margin:18px 0;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.08);font-size:14px;color:var(--slip-ink)}
+.eff b{display:block;font-family:var(--display);font-size:18px;margin-bottom:2px}
+.eff.ok b{color:#6FE3C4}.eff.mid b{color:#FFD16B}.eff.low b{color:#FF9C9C}
+
+.mbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:20;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));background:var(--slip);color:var(--slip-ink);box-shadow:0 -10px 30px rgba(0,0,0,.25)}
+.mbar small{display:block;color:var(--slip-muted);font-size:12px}
+.mbar strong{font-family:var(--display);font-size:26px;letter-spacing:-.03em;line-height:1.1}
+.mbar button{border:0;border-radius:12px;padding:10px 16px;font-weight:650;background:var(--slip-ink);color:var(--slip)}
+
+dialog#settings{width:min(720px,calc(100% - 24px));max-height:calc(100% - 24px);border:0;border-radius:24px;padding:0;background:var(--surface);color:var(--ink);box-shadow:0 30px 80px rgba(0,0,0,.4)}
+dialog#settings::backdrop{background:rgba(14,17,40,.55);backdrop-filter:blur(3px)}
+.dlg-h{padding:24px 26px 8px}
+.dlg-h h2{font-family:var(--display);margin:0 0 6px;font-size:26px;letter-spacing:-.02em}
+.dlg-h p{margin:0;color:var(--muted)}
+.dlg-b{padding:8px 26px 18px;overflow:auto;max-height:60vh}
+.dlg-f{display:flex;justify-content:space-between;gap:10px;padding:16px 26px 22px;border-top:1px solid var(--line)}
+.sgroup{margin-top:22px}
+.sgroup h3{font-family:var(--display);font-size:17px;margin:0 0 2px}
+.sgroup p{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.srow:last-child{border-bottom:0}
+.sin{display:flex;align-items:center;gap:6px;color:var(--muted);font-weight:600}
+.sin input{width:88px;height:38px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface-2);padding:0 10px;text-align:right}
+.sin input.txt{width:210px;text-align:left}
+.sin input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.srow .sdel{width:34px;height:34px;font-size:18px}
+
+#toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:50}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:920px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .slip{position:static}
+  .mbar{display:flex}
+  .wrap{padding-bottom:110px}
+  #toast{bottom:92px}
+}
+@media (max-width:640px){
+  .stage{padding:20px 18px 22px;border-radius:22px}
+  .fields.two,.opts.cols2,.opts.cols3{grid-template-columns:minmax(0,1fr)}
+  .step .s-l{display:none}
+  .step[aria-current="step"] .s-l{display:inline}
+  .steps{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .step[aria-current="step"]{grid-column:auto}
+  .addon{grid-template-columns:auto minmax(0,1fr) 40px}
+  .addon .kind,.addon .valbox{grid-column:2/3}
+  .addon .icon-btn{grid-row:1;grid-column:3}
+  .expense{grid-template-columns:minmax(0,1fr) 40px}
+  .expense .amt{grid-column:1/2}
+  .expense .icon-btn{grid-row:1;grid-column:2}
+  .pane h2{font-size:24px}
+  .result-n{font-size:38px}
+  .srow{flex-wrap:wrap}
+  .sin input.txt{width:150px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2c3.2 5.4 6.6 8.6 6.6 13.2 0 2.7-1.2 4.6-2.9 5.8l-1.2 8.5a1 1 0 0 1-1 .9h-3a1 1 0 0 1-1-.9l-1.2-8.5c-1.7-1.2-2.9-3.100-2.9-5.800C9.400 10.600 12.800 7.400 16 2Z" fill="currentColor"/><circle cx="16" cy="14.500" r="1.900" fill="var(--surface)"/><path d="M16 16.400v8" stroke="var(--surface)" stroke-width="1.600" stroke-linecap="round"/></svg>
+      <span>Inkwell</span>
+    </div>
+    <div class="top-actions">
+      <label class="sr-only" for="cur">Currency</label>
+      <select id="cur"></select>
+      <button class="pill-btn" id="btn-settings" type="button">Pricing rules</button>
+      <button class="pill-btn icon-sq" id="btn-theme" type="button" aria-label="Switch light or dark theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="intro">
+    <h1>Price your illustration work fairly</h1>
+    <p>Answer five short steps. Your quote builds on the right as you go, and every number can be changed to match how you work.</p>
+  </section>
+
+  <div class="grid">
+    <main class="stage" id="stage" aria-label="Quote builder">
+      <nav class="steps" id="steps" aria-label="Steps"></nav>
+
+      <!-- 1 RATE -->
+      <section class="pane" data-pane="0" aria-labelledby="h0">
+        <h2 id="h0">What do you charge per hour?</h2>
+        <p class="lead">Your hourly rate sits underneath every quote. Not sure what yours should be? Answer a few questions and we'll work it out.</p>
+        <div class="seg" role="group" aria-label="How to set your rate">
+          <button type="button" data-ratemode="help">Help me find it</button>
+          <button type="button" data-ratemode="know">I know my rate</button>
+        </div>
+        <div id="rate-help">
+          <div class="fields two">
+            <div class="field">
+              <label for="f-income">Monthly income you want, after tax</label>
+              <div class="inp"><span class="pre cur"></span><input id="f-income" type="number" inputmode="decimal" min="0" step="any" data-k="calc.income"></div>
+              <p class="hint">What you'd like to take home each month.</p>
+            </div>
+            <div class="field">
+              <label for="f-costs">Monthly business costs</label>
+              <div class="inp"><span class="pre cur"></span><input id="f-costs" type="number" inputmode="decimal" min="0" step="any" data-k="calc.costs"></div>
+              <p class="hint">Software, internet, devices, studio space, subscriptions.</p>
+            </div>
+            <div class="field">
+              <label for="f-tax">Tax to set aside</label>
+              <div class="inp"><input id="f-tax" type="number" inputmode="decimal" min="0" max="60" step="any" data-k="calc.tax"><span class="suf">%</span></div>
+              <p class="hint">20 to 30% is common. A local accountant can tell you more.</p>
+            </div>
+            <div class="field">
+              <label for="f-hw">Billable hours per week</label>
+              <div class="inp"><input id="f-hw" type="number" inputmode="decimal" min="1" max="60" step="any" data-k="calc.hoursWeek"><span class="suf">hours</span></div>
+              <p class="hint">Time spent drawing for clients. 15 to 25 is realistic; the rest goes to admin and rest.</p>
+            </div>
+            <div class="field">
+              <label for="f-wo">Weeks off per year</label>
+              <div class="inp"><input id="f-wo" type="number" inputmode="decimal" min="0" max="51" step="any" data-k="calc.weeksOff"><span class="suf">weeks</span></div>
+              <p class="hint">Holidays, sick days and quiet periods.</p>
+            </div>
+          </div>
+          <div class="label" id="exp-l">Where are you in your career?</div>
+          <div class="opts cols2" data-group="calc.exp" role="radiogroup" aria-labelledby="exp-l"></div>
+        </div>
+        <div id="rate-know" hidden>
+          <div class="field" style="max-width:340px">
+            <label for="f-rate">Your hourly rate</label>
+            <div class="inp"><span class="pre cur"></span><input id="f-rate" type="number" inputmode="decimal" min="0" step="any" data-k="manualRate"><span class="suf">per hour</span></div>
+          </div>
+        </div>
+        <div class="result">
+          <div><div class="result-l">Your hourly rate</div><div class="result-n" id="rate-out"></div></div>
+          <div class="result-side" id="rate-side"></div>
+        </div>
+      </section>
+
+      <!-- 2 PROJECT -->
+      <section class="pane" data-pane="1" aria-labelledby="h1" hidden>
+        <h2 id="h1">Tell us about the project</h2>
+        <p class="lead">Start with what the client wants drawn. The time estimate is the biggest part of the price, so adjust it to your own speed.</p>
+        <div class="fields two">
+          <div class="field">
+            <label for="f-pname">Project name <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+            <div class="inp"><input id="f-pname" type="text" data-type="text" data-k="projectName" placeholder="Spring campaign cover"></div>
+          </div>
+          <div class="field">
+            <label for="f-cname">Client name <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+            <div class="inp"><input id="f-cname" type="text" data-type="text" data-k="clientName" placeholder="Fern &amp; Co."></div>
+          </div>
+          <div class="field">
+            <label for="f-type">What are you making?</label>
+            <div class="inp"><select id="f-type"></select></div>
+          </div>
+          <div class="field">
+            <label for="f-pieces">How many pieces?</label>
+            <div class="stepper"><button type="button" data-step="pieces" data-d="-1" aria-label="One fewer piece">−</button><input id="f-pieces" type="number" inputmode="numeric" min="1" max="99" step="1" data-k="pieces"><button type="button" data-step="pieces" data-d="1" aria-label="One more piece">+</button></div>
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label for="f-hours">Hours per piece</label>
+            <div class="inp" style="max-width:260px"><input id="f-hours" type="number" inputmode="decimal" min="0" step="any" data-k="hours"><span class="suf">hours</span></div>
+            <p class="hint" id="hours-hint"></p>
+          </div>
+        </div>
+        <div class="label" id="cx-l">How detailed is the artwork?</div>
+        <div class="opts cols2" data-group="complexity" role="radiogroup" aria-labelledby="cx-l"></div>
+        <div class="label" id="cl-l">Who is the client?</div>
+        <div class="opts cols2" data-group="client" role="radiogroup" aria-labelledby="cl-l"></div>
+        <p class="note" id="admin-note"></p>
+      </section>
+
+      <!-- 3 USAGE -->
+      <section class="pane" data-pane="2" aria-labelledby="h2" hidden>
+        <h2 id="h2">How will the client use it?</h2>
+        <p class="lead">You're selling the artwork and permission to use it. The wider the use, the more value the client gets, so the price rises with it.</p>
+        <div class="opts list" data-group="usage" role="radiogroup" aria-labelledby="h2"></div>
+        <div id="duration-wrap">
+          <div class="label" id="du-l">For how long?</div>
+          <div class="chips" data-group="duration" role="radiogroup" aria-labelledby="du-l"></div>
+        </div>
+        <p class="note" id="buyout-note" hidden>A full buyout already covers every use, forever, so no time limit applies.</p>
+        <details class="explain">
+          <summary>Why charge for usage rights?</summary>
+          <p>A poster used on one blog and the same poster on a national ad campaign are worth very different amounts to the client. Usage fees let you earn more when your work earns more for them, instead of charging only for the hours you spent. The percentages are a starting point; change them under Pricing rules.</p>
+        </details>
+      </section>
+
+      <!-- 4 EXTRAS -->
+      <section class="pane" data-pane="3" aria-labelledby="h3" hidden>
+        <h2 id="h3">Deadlines, changes and extras</h2>
+        <p class="lead">These are where jobs quietly lose money. Set the rules now and the quote will cover them.</p>
+        <div class="label" id="ru-l" style="margin-top:0">How soon is it needed?</div>
+        <div class="opts cols2" data-group="rush" role="radiogroup" aria-labelledby="ru-l"></div>
+
+        <div class="sub-h">Revisions</div>
+        <div class="fields two">
+          <div class="field">
+            <label for="f-inc">Rounds of changes included</label>
+            <div class="stepper"><button type="button" data-step="includedRounds" data-d="-1" aria-label="Fewer included rounds">−</button><input id="f-inc" type="number" inputmode="numeric" min="0" max="20" step="1" data-k="includedRounds"><button type="button" data-step="includedRounds" data-d="1" aria-label="More included rounds">+</button></div>
+          </div>
+          <div class="field">
+            <label for="f-exp">Rounds you expect to need</label>
+            <div class="stepper"><button type="button" data-step="expectedRounds" data-d="-1" aria-label="Fewer expected rounds">−</button><input id="f-exp" type="number" inputmode="numeric" min="0" max="20" step="1" data-k="expectedRounds"><button type="button" data-step="expectedRounds" data-d="1" aria-label="More expected rounds">+</button></div>
+          </div>
+          <div class="field">
+            <label for="f-erh">Time for each extra round</label>
+            <div class="inp"><input id="f-erh" type="number" inputmode="decimal" min="0" step="any" data-k="extraRoundHours"><span class="suf">hours</span></div>
+          </div>
+        </div>
+        <p class="note" id="rev-note"></p>
+
+        <div class="sub-h">Optional extras</div>
+        <p class="hint" style="margin-top:0">Tick what the client wants. Rename, reprice or add your own.</p>
+        <div id="addons"></div>
+        <button type="button" class="add-link" id="add-addon">Add an extra</button>
+
+        <div class="sub-h">Materials and costs</div>
+        <p class="hint" style="margin-top:0">Stock images, fonts, printing, shipping. Anything you pay for the job.</p>
+        <div id="expenses"></div>
+        <button type="button" class="add-link" id="add-expense">Add a cost</button>
+        <div class="field" style="max-width:260px;margin-top:16px">
+          <label for="f-mk">Markup on costs</label>
+          <div class="inp"><input id="f-mk" type="number" inputmode="decimal" min="0" step="any" data-k="markup"><span class="suf">%</span></div>
+        </div>
+      </section>
+
+      <!-- 5 FINISH -->
+      <section class="pane" data-pane="4" aria-labelledby="h4" hidden>
+        <h2 id="h4">Choose your price and finish</h2>
+        <p class="lead">Pick how bold to be. The totals show what each option would add up to for this exact project.</p>
+        <div class="opts cols3" data-group="tier" role="radiogroup" aria-labelledby="h4"></div>
+        <div class="fields two" style="margin-top:22px">
+          <div class="field">
+            <label for="f-min">Smallest job you'll take</label>
+            <div class="inp"><span class="pre cur"></span><input id="f-min" type="number" inputmode="decimal" min="0" step="any" data-k="minFee"></div>
+            <p class="hint">A floor so tiny jobs still cover your setup time.</p>
+          </div>
+          <div class="field">
+            <label for="f-disc">Discount</label>
+            <div class="inp"><input id="f-disc" type="number" inputmode="decimal" min="0" max="100" step="any" data-k="discount"><span class="suf">%</span></div>
+            <p class="hint">For repeat clients or bundles.</p>
+          </div>
+          <div class="field">
+            <label for="f-taxq">Sales tax or VAT</label>
+            <div class="inp"><input id="f-taxq" type="number" inputmode="decimal" min="0" max="60" step="any" data-k="tax"><span class="suf">%</span></div>
+            <p class="hint">Leave at 0 if you don't charge it.</p>
+          </div>
+          <div class="field">
+            <label for="f-dep">Deposit to start work</label>
+            <div class="inp"><input id="f-dep" type="number" inputmode="decimal" min="0" max="100" step="any" data-k="deposit"><span class="suf">%</span></div>
+            <p class="hint">30 to 50% upfront protects you.</p>
+          </div>
+        </div>
+        <div class="sub-h">Your quote, ready to send</div>
+        <p class="hint" style="margin-top:0">Copy this into an email or invoice. It updates with every change.</p>
+        <textarea class="qt" id="quote-text" readonly aria-label="Quote text"></textarea>
+        <div class="actions">
+          <button type="button" class="btn primary" id="copy-main">Copy quote</button>
+          <button type="button" class="btn ghost" id="new-quote">Start a new quote</button>
+        </div>
+      </section>
+
+      <div class="foot">
+        <button type="button" class="btn ghost" id="back">Back</button>
+        <button type="button" class="btn primary" id="next">Continue</button>
+      </div>
+    </main>
+
+    <aside class="slip" id="slip" aria-label="Live quote">
+      <div class="slip-h"><span id="slip-title">Your quote</span><span class="tier-tag" id="tier-tag"></span></div>
+      <div class="total" id="total">0</div>
+      <div class="total-sub" id="total-sub"></div>
+      <div class="anat" id="anat" role="img" aria-label="Share of the price by part">
+        <span data-seg="creative"></span><span data-seg="revisions"></span><span data-seg="license"></span><span data-seg="rush"></span><span data-seg="extras"></span><span data-seg="expenses"></span><span data-seg="minfee"></span>
+      </div>
+      <ul class="legend" id="legend">
+        <li data-seg="creative"><i></i><span class="n">Illustration work</span><span class="v"></span></li>
+        <li data-seg="revisions"><i></i><span class="n">Extra revisions</span><span class="v"></span></li>
+        <li data-seg="license"><i></i><span class="n">Usage license</span><span class="v"></span></li>
+        <li data-seg="rush"><i></i><span class="n">Rush fee</span><span class="v"></span></li>
+        <li data-seg="extras"><i></i><span class="n">Extras</span><span class="v"></span></li>
+        <li data-seg="expenses"><i></i><span class="n">Materials and costs</span><span class="v"></span></li>
+        <li data-seg="minfee"><i></i><span class="n">Minimum job top-up</span><span class="v"></span></li>
+      </ul>
+      <div class="perf" aria-hidden="true"></div>
+      <dl class="sums">
+        <div><dt>Subtotal</dt><dd id="s-sub"></dd></div>
+        <div id="s-disc-row"><dt>Discount</dt><dd id="s-disc"></dd></div>
+        <div id="s-tax-row"><dt>Tax</dt><dd id="s-tax"></dd></div>
+        <div><dt>Deposit to start</dt><dd id="s-dep"></dd></div>
+        <div><dt>Balance on delivery</dt><dd id="s-bal"></dd></div>
+      </dl>
+      <div class="eff" id="eff"></div>
+      <button type="button" class="btn light" id="copy-slip">Copy quote</button>
+    </aside>
+  </div>
+</div>
+
+<div class="mbar" id="mbar">
+  <div><small>Your quote</small><strong id="m-total">0</strong></div>
+  <button type="button" id="m-go">See breakdown</button>
+</div>
+
+<dialog id="settings" aria-labelledby="dlg-t">
+  <div class="dlg-h"><h2 id="dlg-t">Pricing rules</h2><p>These numbers shape every quote. Change them to match how you work and everything updates instantly. Your changes are saved on this device.</p></div>
+  <div class="dlg-b" id="settings-body"></div>
+  <div class="dlg-f"><button type="button" class="btn ghost" id="settings-reset">Reset to defaults</button><button type="button" class="btn primary" id="settings-done">Done</button></div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- data ---------- */
+var CURRENCIES={
+  USD:{sym:'$',rate:1,loc:'en-US',name:'US dollar'},
+  EUR:{sym:'€',rate:0.92,loc:'de-DE',name:'Euro'},
+  GBP:{sym:'£',rate:0.79,loc:'en-GB',name:'British pound'},
+  INR:{sym:'₹',rate:84,loc:'en-IN',name:'Indian rupee'},
+  CAD:{sym:'C$',rate:1.37,loc:'en-CA',name:'Canadian dollar'},
+  AUD:{sym:'A$',rate:1.52,loc:'en-AU',name:'Australian dollar'}
+};
+var EXP=[
+  {id:'new',label:'Just starting',desc:'First few paid projects',adj:-15},
+  {id:'est',label:'Established',desc:'Steady clients and a portfolio',adj:0},
+  {id:'demand',label:'In demand',desc:'Booked ahead, clients find you',adj:25},
+  {id:'star',label:'Highly sought',desc:'Known name or niche specialist',adj:50}
+];
+var DEFAULT_CFG={
+  adminPct:10,
+  types:[
+    {id:'spot',label:'Spot illustration',hours:3},
+    {id:'editorial',label:'Editorial illustration',hours:8},
+    {id:'character',label:'Character design',hours:8},
+    {id:'mascot',label:'Logo or mascot',hours:10},
+    {id:'comic',label:'Comic or manga page',hours:10},
+    {id:'spread',label:"Children's book spread",hours:14},
+    {id:'poster',label:'Poster or album art',hours:16},
+    {id:'cover',label:'Book cover',hours:20},
+    {id:'packaging',label:'Packaging illustration',hours:20},
+    {id:'other',label:'Something else',hours:6}
+  ],
+  complexity:[
+    {id:'simple',label:'Simple',desc:'Flat shapes, few elements, plain background',value:0.75},
+    {id:'standard',label:'Standard',desc:'Clear subject with a simple setting',value:1},
+    {id:'detailed',label:'Detailed',desc:'Full scene, several elements, rich rendering',value:1.4},
+    {id:'intricate',label:'Intricate',desc:'Dense detail, crowds or heavy texture',value:1.9}
+  ],
+  clients:[
+    {id:'person',label:'Individual',desc:'Personal or hobby project',value:0.9},
+    {id:'small',label:'Small business',desc:'Startup, shop or local brand',value:1},
+    {id:'agency',label:'Agency or publisher',desc:'Established team with a budget',value:1.2},
+    {id:'big',label:'Large company',desc:'Big brand with wide reach',value:1.4}
+  ],
+  usage:[
+    {id:'personal',label:'Personal use',desc:'Private enjoyment, gifts, a single print. No business use.',pct:0},
+    {id:'social',label:'Web and social',desc:'Website, newsletter, social media posts',pct:25},
+    {id:'print',label:'Print and editorial',desc:'Books, magazines, packaging, merchandise',pct:60},
+    {id:'ads',label:'Advertising',desc:'Campaigns, billboards, paid promotion',pct:120},
+    {id:'buyout',label:'Full buyout',desc:'Client owns all rights, forever',pct:250,fixedDuration:true}
+  ],
+  durations:[
+    {id:'1',label:'1 year',value:1},
+    {id:'3',label:'3 years',value:1.3},
+    {id:'5',label:'5 years',value:1.5},
+    {id:'forever',label:'Forever',value:1.8}
+  ],
+  rush:[
+    {id:'none',label:'Standard',desc:'4 weeks or more',pct:0},
+    {id:'soon',label:'Priority',desc:'Under 2 weeks',pct:25},
+    {id:'fast',label:'Rush',desc:'Under 1 week',pct:50},
+    {id:'urgent',label:'Urgent',desc:'Within 48 hours',pct:100}
+  ],
+  tiers:[
+    {id:'low',label:'Lower',desc:'For new clients or tight budgets',value:0.85},
+    {id:'std',label:'Recommended',desc:'Matches your rate and the project',value:1},
+    {id:'high',label:'Premium',desc:'For demanding clients or big reach',value:1.3}
+  ]
+};
+function uid(){return Math.random().toString(36).slice(2,8)}
+function clone(o){return JSON.parse(JSON.stringify(o))}
+var DEFAULT_STATE={
+  currency:'USD',step:0,rateMode:'help',manualRate:45,
+  calc:{income:3000,costs:500,tax:20,hoursWeek:20,weeksOff:6,exp:'est'},
+  projectName:'',clientName:'',typeId:'editorial',pieces:1,hours:8,complexity:'standard',client:'small',
+  usage:'social',duration:'1',rush:'none',includedRounds:2,expectedRounds:2,extraRoundHours:2,
+  addons:[
+    {id:'a1',name:'Layered source files',kind:'percent',value:15,on:false},
+    {id:'a2',name:'Print-ready file setup',kind:'hours',value:2,on:false},
+    {id:'a3',name:'Extra sketch options',kind:'hours',value:3,on:false},
+    {id:'a4',name:'Process timelapse video',kind:'flat',value:50,on:false}
+  ],
+  expenses:[],markup:0,tier:'std',discount:0,tax:0,deposit:50,minFee:100
+};
+var cfg=clone(DEFAULT_CFG), S=clone(DEFAULT_STATE);
+var STORE='inkwell-v1';
+function load(){
+  try{
+    var raw=localStorage.getItem(STORE); if(!raw) return;
+    var d=JSON.parse(raw);
+    if(d.cfg) cfg=Object.assign(clone(DEFAULT_CFG),d.cfg);
+    if(d.state) S=Object.assign(clone(DEFAULT_STATE),d.state);
+    S.calc=Object.assign(clone(DEFAULT_STATE.calc),S.calc||{});
+  }catch(e){}
+  S.step=0;
+  if(!CURRENCIES[S.currency]) S.currency='USD';
+}
+var saveT;
+function save(){clearTimeout(saveT);saveT=setTimeout(function(){try{localStorage.setItem(STORE,JSON.stringify({cfg:cfg,state:S}))}catch(e){}},300)}
+
+/* ---------- helpers ---------- */
+function $(s,r){return (r||document).querySelector(s)}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function num(v){var x=parseFloat(v);return isFinite(x)?x:0}
+function getP(o,p){return p.split('.').reduce(function(a,k){return a==null?a:a[k]},o)}
+function setP(o,p,v){var ks=p.split('.'),last=ks.pop();var t=ks.reduce(function(a,k){return a[k]},o);t[last]=v}
+function find(list,id){for(var i=0;i<list.length;i++){if(list[i].id===id) return list[i]}return list[0]}
+function n2(v){return +(+v).toFixed(2)}
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function money(v){
+  var c=CURRENCIES[S.currency],neg=v<0,a=Math.abs(Math.round(v));
+  var s;
+  try{s=new Intl.NumberFormat(c.loc,{style:'currency',currency:S.currency,maximumFractionDigits:0}).format(a)}catch(e){s=c.sym+a}
+  return (neg?'−':'')+s;
+}
+function hrs(v){return (Math.round(v*10)/10).toString()}
+function niceRound(v){var st=v>=10000?100:v>=1000?50:v>=100?5:1;return Math.round(v/st)*st}
+
+/* ---------- calculation ---------- */
+function hourlyRate(){
+  if(S.rateMode==='know') return Math.max(0,S.manualRate);
+  var c=S.calc,tax=Math.min(Math.max(c.tax,0),60)/100;
+  var weeks=Math.max(1,52-Math.min(Math.max(c.weeksOff,0),51));
+  var h=Math.max(1,c.hoursWeek)*weeks;
+  var gross=(c.income*12)/(1-tax)+c.costs*12;
+  var adj=find(EXP,c.exp).adj;
+  return Math.max(0,Math.round(gross/h*(1+adj/100)));
+}
+function tierMult(){return find(cfg.tiers,S.tier).value}
+function compute(tm){
+  var rate=hourlyRate();
+  var cx=find(cfg.complexity,S.complexity),cl=find(cfg.clients,S.client),us=find(cfg.usage,S.usage),du=find(cfg.durations,S.duration),ru=find(cfg.rush,S.rush);
+  var baseHours=Math.max(0,S.pieces)*Math.max(0,S.hours)*cx.value;
+  var workHours=baseHours*(1+cfg.adminPct/100);
+  var creative=Math.round(workHours*rate*cl.value);
+  var extraRounds=Math.max(0,S.expectedRounds-S.includedRounds);
+  var revHours=extraRounds*Math.max(0,S.extraRoundHours);
+  var revisions=Math.round(revHours*rate);
+  var dur=us.fixedDuration?1:du.value;
+  var license=Math.round(creative*us.pct/100*dur);
+  var rush=Math.round((creative+revisions)*ru.pct/100);
+  var extras=0,extraHours=0;
+  S.addons.forEach(function(a){
+    if(!a.on) return;
+    if(a.kind==='hours'){extras+=a.value*rate;extraHours+=a.value}
+    else if(a.kind==='flat'){extras+=a.value}
+    else{extras+=creative*a.value/100}
+  });
+  extras=Math.round(extras);
+  var costs=Math.round(S.expenses.reduce(function(s,e){return s+(e.amount||0)},0)*(1+Math.max(0,S.markup)/100));
+  var raw={creative:creative,revisions:revisions,license:license,rush:rush,extras:extras};
+  var sc={},fee=0,k;
+  for(k in raw){sc[k]=Math.round(raw[k]*tm);fee+=sc[k]}
+  var minfee=Math.max(0,Math.round(S.minFee)-fee); if(fee===0) minfee=0;
+  fee+=minfee;
+  var discount=Math.round(fee*Math.min(100,Math.max(0,S.discount))/100);
+  var subtotal=fee-discount+costs;
+  var tax=Math.round(subtotal*Math.max(0,S.tax)/100);
+  var total=subtotal+tax;
+  var deposit=Math.round(total*Math.min(100,Math.max(0,S.deposit))/100);
+  var allHours=workHours+revHours+extraHours;
+  return {rate:rate,seg:{creative:sc.creative,revisions:sc.revisions,license:sc.license,rush:sc.rush,extras:sc.extras,expenses:costs,minfee:minfee},
+    gross:fee+costs,fee:fee,discount:discount,subtotal:subtotal,tax:tax,total:total,deposit:deposit,balance:total-deposit,
+    hours:allHours,workHours:workHours,revHours:revHours,extraRounds:extraRounds,eff:allHours>0?(fee-discount)/allHours:0,
+    us:us,du:du,ru:ru,cx:cx,cl:cl};
+}
+
+/* ---------- rendering: choices ---------- */
+function setGroup(path,items,selected,meta){
+  var el=$('[data-group="'+path+'"]'); if(!el) return;
+  el.innerHTML=items.map(function(it){
+    return '<button type="button" class="opt" role="radio" aria-checked="'+(it.id===selected)+'" data-choice="'+path+'" data-val="'+esc(it.id)+'"><span class="opt-t">'+esc(it.label)+'</span>'+(it.desc?'<span class="opt-d">'+esc(it.desc)+'</span>':'')+'<span class="opt-m">'+meta(it)+'</span></button>';
+  }).join('');
+}
+function renderChoices(){
+  if(!cfg.types.length) cfg.types=clone(DEFAULT_CFG.types);
+  if(!cfg.types.some(function(t){return t.id===S.typeId})) S.typeId=cfg.types[0].id;
+  $('#f-type').innerHTML=cfg.types.map(function(t){return '<option value="'+esc(t.id)+'">'+esc(t.label)+'</option>'}).join('');
+  $('#f-type').value=S.typeId;
+  setGroup('calc.exp',EXP,S.calc.exp,function(it){return it.adj===0?'Base':(it.adj>0?'+':'−')+Math.abs(it.adj)+'%'});
+  setGroup('complexity',cfg.complexity,S.complexity,function(it){return '×'+n2(it.value)});
+  setGroup('client',cfg.clients,S.client,function(it){return '×'+n2(it.value)});
+  setGroup('usage',cfg.usage,S.usage,function(it){return it.pct===0?'No fee':'+'+n2(it.pct)+'%'});
+  setGroup('duration',cfg.durations,S.duration,function(it){return '×'+n2(it.value)});
+  setGroup('rush',cfg.rush,S.rush,function(it){return it.pct===0?'No fee':'+'+n2(it.pct)+'%'});
+  setGroup('tier',cfg.tiers,S.tier,function(it){return '<span data-tier-total="'+esc(it.id)+'"></span>'});
+}
+var UNITS={hours:'h',percent:'%'};
+function unitFor(k){return k==='flat'?CURRENCIES[S.currency].sym:UNITS[k]}
+function renderAddons(){
+  $('#addons').innerHTML=S.addons.map(function(a,i){
+    return '<div class="row addon" data-i="'+i+'">'
+    +'<label class="check"><input type="checkbox" data-addon="on" '+(a.on?'checked':'')+' aria-label="Include '+esc(a.name)+'"><span class="box"></span></label>'
+    +'<input type="text" data-addon="name" value="'+esc(a.name)+'" aria-label="Extra name">'
+    +'<select class="kind" data-addon="kind" aria-label="How this extra is charged"><option value="hours"'+(a.kind==='hours'?' selected':'')+'>Hours of work</option><option value="flat"'+(a.kind==='flat'?' selected':'')+'>Flat fee</option><option value="percent"'+(a.kind==='percent'?' selected':'')+'>% of artwork</option></select>'
+    +'<div class="valbox"><input type="number" inputmode="decimal" min="0" step="any" data-addon="value" value="'+a.value+'" aria-label="Amount"><span class="unit" data-kind="'+a.kind+'">'+unitFor(a.kind)+'</span></div>'
+    +'<button type="button" class="icon-btn" data-addon-del aria-label="Remove '+esc(a.name)+'">×</button></div>';
+  }).join('');
+}
+function renderExpenses(){
+  $('#expenses').innerHTML=S.expenses.map(function(e,i){
+    return '<div class="row expense" data-i="'+i+'">'
+    +'<input type="text" data-exp="name" value="'+esc(e.name)+'" placeholder="e.g. Stock reference photos" aria-label="Cost name">'
+    +'<div class="inp amt" style="height:44px;border-radius:10px"><span class="pre cur">'+CURRENCIES[S.currency].sym+'</span><input type="number" inputmode="decimal" min="0" step="any" data-exp="amount" value="'+(e.amount||'')+'" aria-label="Cost amount"></div>'
+    +'<button type="button" class="icon-btn" data-exp-del aria-label="Remove cost">×</button></div>';
+  }).join('');
+}
+
+/* ---------- steps ---------- */
+var STEPS=['Rate','Project','Usage','Extras','Finish'];
+var NEXT=['Continue to project','Continue to usage','Continue to extras','Continue to finish','Copy quote'];
+function showStep(n,scroll){
+  S.step=Math.max(0,Math.min(STEPS.length-1,n));
+  $$('.pane').forEach(function(p){p.hidden=(+p.dataset.pane!==S.step)});
+  $('#steps').innerHTML=STEPS.map(function(l,i){
+    return '<button type="button" class="step'+(i<S.step?' done':'')+'" data-go="'+i+'"'+(i===S.step?' aria-current="step"':'')+'><span class="s-bar"></span><span class="s-t"><i>'+(i+1)+'</i><span class="s-l">'+l+'</span></span></button>';
+  }).join('');
+  $('#back').style.visibility=S.step===0?'hidden':'visible';
+  $('#next').textContent=NEXT[S.step];
+  if(scroll){var y=$('#stage').getBoundingClientRect().top;if(y<0)window.scrollBy({top:y-16,behavior:reduce?'auto':'smooth'})}
+}
+
+/* ---------- sync (live outputs) ---------- */
+var shown=0,tw;
+function tweenTotal(v){
+  var el=$('#total');
+  if(reduce){shown=v;el.textContent=money(v);return}
+  cancelAnimationFrame(tw);
+  var from=shown,t0=performance.now(),d=320;
+  function step(t){
+    var p=Math.min(1,(t-t0)/d),e=1-Math.pow(1-p,3);
+    shown=from+(v-from)*e;el.textContent=money(shown);
+    if(p<1) tw=requestAnimationFrame(step); else shown=v;
+  }
+  tw=requestAnimationFrame(step);
+}
+function sync(){
+  var cur=CURRENCIES[S.currency];
+  $$('.cur').forEach(function(el){el.textContent=cur.sym});
+  $$('#addons .unit').forEach(function(u){u.textContent=unitFor(u.dataset.kind)});
+  var rate=hourlyRate();
+  $('#rate-out').textContent=money(rate)+' / hour';
+  $('#rate-side').textContent='About '+money(rate*6)+' for a six-hour day';
+  $('#rate-help').hidden=S.rateMode!=='help';
+  $('#rate-know').hidden=S.rateMode!=='know';
+  $$('[data-ratemode]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.ratemode===S.rateMode))});
+  var type=find(cfg.types,S.typeId);
+  $('#hours-hint').textContent='Typical for '+type.label.toLowerCase()+': about '+type.hours+' hours. Use whatever matches your own speed.';
+  $('#admin-note').textContent=cfg.adminPct+'% extra time is added automatically for emails, feedback and file handling, so you are paid for the work around the drawing too.';
+  var us=find(cfg.usage,S.usage);
+  $('#duration-wrap').hidden=us.pct===0||!!us.fixedDuration;
+  $('#buyout-note').hidden=!us.fixedDuration;
+
+  var q=compute(tierMult());
+  var xr=q.extraRounds;
+  $('#rev-note').textContent=xr>0
+    ? xr+' extra round'+(xr>1?'s':'')+' beyond the '+S.includedRounds+' included adds '+hrs(q.revHours)+' hours ('+money(Math.round(q.revHours*q.rate))+') to the quote.'
+    : 'Changes within the '+S.includedRounds+' included round'+(S.includedRounds===1?'':'s')+' are covered by the base price. Anything beyond that gets charged.';
+
+  cfg.tiers.forEach(function(t){var el=$('[data-tier-total="'+t.id+'"]');if(el) el.textContent=money(compute(t.value).total)});
+
+  tweenTotal(q.total);
+  $('#m-total').textContent=money(q.total);
+  $('#tier-tag').textContent=find(cfg.tiers,S.tier).label;
+  $('#slip-title').textContent=S.projectName?S.projectName:'Your quote';
+  $('#total-sub').textContent=q.total===0?'Add your rate and project details to see a price.':(S.tax>0?'Includes '+n2(S.tax)+'% tax':'Before tax');
+  var sum=q.gross;
+  Object.keys(q.seg).forEach(function(k){
+    var v=q.seg[k],pct=sum>0?v/sum*100:0;
+    var b=$('#anat [data-seg="'+k+'"]');if(b) b.style.flexBasis=pct+'%';
+    var li=$('#legend [data-seg="'+k+'"]');
+    if(li){li.hidden=(v===0&&k!=='creative');$('.v',li).textContent=money(v)}
+  });
+  $('#s-sub').textContent=money(q.fee+q.seg.expenses);
+  $('#s-disc-row').hidden=q.discount===0;$('#s-disc').textContent='−'+money(q.discount).replace('−','');
+  $('#s-tax-row').hidden=q.tax===0;$('#s-tax').textContent=money(q.tax);
+  $('#s-dep').textContent=money(q.deposit);
+  $('#s-bal').textContent=money(q.balance);
+
+  var eff=$('#eff');eff.className='eff';
+  if(q.rate<=0||q.hours<=0){eff.innerHTML='<b>Set your rate first</b>Enter an hourly rate and some hours to see how this job pays.'}
+  else{
+    var ratio=q.eff/q.rate,hv=money(q.eff)+' an hour';
+    if(ratio>=0.97){eff.classList.add('ok');eff.innerHTML='<b>'+hv+'</b>You would earn at or above your rate of '+money(q.rate)+' on this job.'}
+    else if(ratio>=0.75){eff.classList.add('mid');eff.innerHTML='<b>'+hv+'</b>A little under your rate of '+money(q.rate)+'. A discount or the lower price option is trimming it.'}
+    else{eff.classList.add('low');eff.innerHTML='<b>'+hv+'</b>Well under your rate of '+money(q.rate)+'. Consider a higher option, fewer free changes or a wider usage fee.'}
+  }
+  $('#quote-text').value=quoteText(q);
+  save();
+}
+
+function quoteText(q){
+  var type=find(cfg.types,S.typeId),cx=q.cx,us=q.us,du=q.du,ru=q.ru;
+  var L=[],pad=function(a,b){return (a+' ').padEnd(30,'.')+' '+b};
+  var title=(S.projectName||type.label)+(S.clientName?' for '+S.clientName:'');
+  L.push('Illustration quote');L.push(title);
+  L.push(new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}));L.push('');
+  L.push('What is included');
+  L.push('- '+type.label+', '+S.pieces+' piece'+(S.pieces===1?'':'s')+', '+cx.label.toLowerCase()+' level of detail');
+  L.push('- Usage: '+us.label.toLowerCase()+(us.pct>0&&!us.fixedDuration?', '+du.label.toLowerCase():''));
+  L.push('- Timeline: '+ru.label.toLowerCase()+' ('+ru.desc.toLowerCase()+')');
+  L.push('- '+S.includedRounds+' round'+(S.includedRounds===1?'':'s')+' of revisions included');
+  var on=S.addons.filter(function(a){return a.on}).map(function(a){return a.name});
+  if(on.length) L.push('- Extras: '+on.join(', '));
+  L.push('');L.push('Price');
+  var names={creative:'Illustration work',revisions:'Extra revisions',license:'Usage license',rush:'Rush fee',extras:'Extras',expenses:'Materials and costs',minfee:'Minimum job top-up'};
+  Object.keys(q.seg).forEach(function(k){if(q.seg[k]>0) L.push(pad(names[k],money(q.seg[k])))});
+  L.push(pad('Subtotal',money(q.fee+q.seg.expenses)));
+  if(q.discount>0) L.push(pad('Discount','−'+money(q.discount)));
+  if(q.tax>0) L.push(pad('Tax ('+n2(S.tax)+'%)',money(q.tax)));
+  L.push(pad('Total',money(q.total)));L.push('');
+  if(S.deposit>0){L.push(pad('Deposit to start ('+n2(S.deposit)+'%)',money(q.deposit)));L.push(pad('Balance on delivery',money(q.balance)));L.push('')}
+  if(q.extraRounds>0) L.push('Revisions beyond the included rounds are billed at '+money(Math.round(S.extraRoundHours*q.rate))+' per round.');
+  L.push('This quote is valid for 30 days.');
+  return L.join('\n');
+}
+
+/* ---------- toast + copy ---------- */
+var tt;
+function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('show')},2200)}
+function fallbackCopy(){
+  var ta=$('#quote-text'),ok=false;
+  try{ta.focus();ta.select();ok=document.execCommand('copy')}catch(e){}
+  toast(ok?'Quote copied':'Select the quote text and copy it');
+}
+function copyQuote(){
+  var t=$('#quote-text').value;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(function(){toast('Quote copied')},fallbackCopy);
+  }else fallbackCopy();
+}
+
+/* ---------- settings dialog ---------- */
+function srow(path,label,suffix,step){
+  var v=getP(cfg,path);
+  return '<label class="srow"><span>'+esc(label)+'</span><span class="sin"><input type="number" inputmode="decimal" min="0" step="'+(step||'any')+'" data-cfg="'+path+'" value="'+v+'">'+suffix+'</span></label>';
+}
+function sgroup(t,d,rows){return '<div class="sgroup"><h3>'+t+'</h3><p>'+d+'</p>'+rows+'</div>'}
+function renderSettings(){
+  var h='';
+  h+=sgroup('Admin and communication','Extra time added to every project for emails, calls and file handling.',srow('adminPct','Added to your estimated hours','%'));
+  h+=sgroup('Project types','Rename them, set how many hours a typical piece takes, or add your own.',
+    cfg.types.map(function(t,i){
+      return '<div class="srow"><span class="sin"><input class="txt" type="text" data-cfg="types.'+i+'.label" value="'+esc(t.label)+'" aria-label="Project type name"></span><span class="sin"><input type="number" min="0" step="any" data-cfg="types.'+i+'.hours" value="'+t.hours+'" aria-label="Typical hours">h<button type="button" class="icon-btn sdel" data-type-del="'+i+'" aria-label="Remove '+esc(t.label)+'">×</button></span></div>';
+    }).join('')+'<button type="button" class="add-link" id="add-type">Add a project type</button>');
+  h+=sgroup('Detail level','Multiplies your hours. 1 means your estimate as entered.',cfg.complexity.map(function(c,i){return srow('complexity.'+i+'.value',c.label,'×')}).join(''));
+  h+=sgroup('Client type','Multiplies the artwork price. Bigger budgets can pay more for the same drawing.',cfg.clients.map(function(c,i){return srow('clients.'+i+'.value',c.label,'×')}).join(''));
+  h+=sgroup('Usage license','The fee as a percentage of the artwork price.',cfg.usage.map(function(c,i){return srow('usage.'+i+'.pct',c.label,'%')}).join(''));
+  h+=sgroup('License length','Multiplies the usage fee. Longer rights cost more.',cfg.durations.map(function(c,i){return srow('durations.'+i+'.value',c.label,'×')}).join(''));
+  h+=sgroup('Rush fees','Added on top of the artwork price when time is short.',cfg.rush.map(function(c,i){return srow('rush.'+i+'.pct',c.label+' ('+c.desc.toLowerCase()+')','%')}).join(''));
+  h+=sgroup('Price options','Multiplies your fees on the last step. Use them to offer a lower or premium price.',cfg.tiers.map(function(c,i){return srow('tiers.'+i+'.value',c.label,'×')}).join(''));
+  $('#settings-body').innerHTML=h;
+}
+
+/* ---------- state transitions ---------- */
+function hydrate(){
+  $$('[data-k]').forEach(function(el){var v=getP(S,el.dataset.k);el.value=(v==null?'':v)});
+  var sel=$('#cur');
+  sel.innerHTML=Object.keys(CURRENCIES).map(function(k){return '<option value="'+k+'">'+k+' '+CURRENCIES[k].sym+'</option>'}).join('');
+  sel.value=S.currency;
+  renderChoices();renderAddons();renderExpenses();
+}
+function convertMoney(from,to){
+  var f=CURRENCIES[to].rate/CURRENCIES[from].rate;
+  var cv=function(v){return v?niceRound(v*f):0};
+  S.calc.income=cv(S.calc.income);S.calc.costs=cv(S.calc.costs);S.manualRate=cv(S.manualRate);S.minFee=cv(S.minFee);
+  S.addons.forEach(function(a){if(a.kind==='flat') a.value=cv(a.value)});
+  S.expenses.forEach(function(e){e.amount=cv(e.amount)});
+}
+function newQuote(){
+  var d=clone(DEFAULT_STATE);
+  ['projectName','clientName','typeId','pieces','complexity','client','usage','duration','rush','includedRounds','expectedRounds','extraRoundHours','markup','tier','discount'].forEach(function(k){S[k]=d[k]});
+  S.typeId=cfg.types.some(function(t){return t.id===d.typeId})?d.typeId:cfg.types[0].id;
+  S.hours=find(cfg.types,S.typeId).hours;
+  S.expenses=[];S.addons.forEach(function(a){a.on=false});
+  hydrate();showStep(0,true);sync();toast('Fresh quote ready');
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',function(e){
+  var t=e.target,b;
+  if((b=t.closest('[data-choice]'))){
+    var path=b.dataset.choice,val=b.dataset.val;
+    setP(S,path,val);
+    $$('[data-choice="'+path+'"]').forEach(function(x){x.setAttribute('aria-checked',String(x===b))});
+    sync();return;
+  }
+  if((b=t.closest('[data-go]'))){showStep(+b.dataset.go,true);return}
+  if((b=t.closest('[data-ratemode]'))){S.rateMode=b.dataset.ratemode;sync();return}
+  if((b=t.closest('[data-step]'))){
+    var key=b.dataset.step,inp=$('[data-k="'+key+'"]');
+    var min=num(inp.min),max=inp.max?num(inp.max):999;
+    var v=Math.min(max,Math.max(min,num(S[key])+num(b.dataset.d)));
+    S[key]=v;inp.value=v;sync();return;
+  }
+  if((b=t.closest('[data-addon-del]'))){S.addons.splice(+b.closest('.row').dataset.i,1);renderAddons();sync();return}
+  if((b=t.closest('[data-exp-del]'))){S.expenses.splice(+b.closest('.row').dataset.i,1);renderExpenses();sync();return}
+  if((b=t.closest('[data-type-del]'))){
+    if(cfg.types.length<=1){toast('Keep at least one project type');return}
+    cfg.types.splice(+b.dataset.typeDel,1);renderSettings();renderChoices();sync();return;
+  }
+});
+$('#add-addon').addEventListener('click',function(){
+  S.addons.push({id:uid(),name:'New extra',kind:'flat',value:niceRound(25*CURRENCIES[S.currency].rate),on:true});
+  renderAddons();sync();
+  var ins=$$('#addons [data-addon="name"]');var last=ins[ins.length-1];if(last){last.focus();last.select()}
+});
+$('#add-expense').addEventListener('click',function(){
+  S.expenses.push({id:uid(),name:'',amount:0});
+  renderExpenses();sync();
+  var ins=$$('#expenses [data-exp="name"]');var last=ins[ins.length-1];if(last) last.focus();
+});
+document.addEventListener('input',function(e){
+  var t=e.target;
+  if(t.dataset.k){
+    setP(S,t.dataset.k,t.dataset.type==='text'?t.value:num(t.value));
+    sync();return;
+  }
+  var row=t.closest('#addons .row');
+  if(row&&t.dataset.addon){
+    var a=S.addons[+row.dataset.i],f=t.dataset.addon;
+    if(f==='on') a.on=t.checked;
+    else if(f==='value') a.value=num(t.value);
+    else{a[f]=t.value}
+    if(f==='kind'){var u=$('.unit',row);u.dataset.kind=a.kind;u.textContent=unitFor(a.kind)}
+    sync();return;
+  }
+  row=t.closest('#expenses .row');
+  if(row&&t.dataset.exp){
+    var ex=S.expenses[+row.dataset.i];
+    ex[t.dataset.exp]=t.dataset.exp==='amount'?num(t.value):t.value;
+    sync();return;
+  }
+  if(t.dataset.cfg){
+    var isTxt=t.classList.contains('txt');
+    setP(cfg,t.dataset.cfg,isTxt?t.value:num(t.value));
+    renderChoices();sync();return;
+  }
+});
+$('#f-type').addEventListener('change',function(){
+  S.typeId=this.value;S.hours=find(cfg.types,S.typeId).hours;
+  $('#f-hours').value=S.hours;sync();
+});
+$('#cur').addEventListener('change',function(){
+  var from=S.currency,to=this.value;
+  convertMoney(from,to);S.currency=to;
+  hydrate();sync();
+  toast('Amounts converted at approximate rates. Check them.');
+});
+$('#back').addEventListener('click',function(){showStep(S.step-1,true)});
+$('#next').addEventListener('click',function(){if(S.step===STEPS.length-1) copyQuote(); else showStep(S.step+1,true)});
+$('#copy-slip').addEventListener('click',copyQuote);
+$('#copy-main').addEventListener('click',copyQuote);
+$('#new-quote').addEventListener('click',newQuote);
+$('#m-go').addEventListener('click',function(){$('#slip').scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'})});
+
+var dlg=$('#settings');
+$('#btn-settings').addEventListener('click',function(){renderSettings();if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open','')});
+$('#settings-done').addEventListener('click',function(){if(dlg.close) dlg.close(); else dlg.removeAttribute('open')});
+dlg.addEventListener('click',function(e){if(e.target===dlg&&dlg.close) dlg.close()});
+$('#settings-reset').addEventListener('click',function(){cfg=clone(DEFAULT_CFG);renderSettings();renderChoices();sync();toast('Pricing rules reset')});
+document.addEventListener('click',function(e){
+  if(e.target.id==='add-type'){
+    cfg.types.push({id:uid(),label:'New project type',hours:6});
+    renderSettings();renderChoices();sync();
+    var ins=$$('#settings-body [data-cfg$=".label"]');var last=ins[ins.length-1];if(last){last.focus();last.select()}
+  }
+});
+
+/* theme */
+var root=document.documentElement;
+try{var th=localStorage.getItem('inkwell-theme');if(th) root.dataset.theme=th}catch(e){}
+$('#btn-theme').addEventListener('click',function(){
+  var cur=root.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  var nx=cur==='dark'?'light':'dark';root.dataset.theme=nx;
+  try{localStorage.setItem('inkwell-theme',nx)}catch(e){}
+});
+
+/* init */
+load();hydrate();showStep(0);sync();
+})();
+</script>
+</body>
+</html>
