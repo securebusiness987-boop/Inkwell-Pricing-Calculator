@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
   box-sizing:border-box;
@@ -63,7 +64,7 @@ button{cursor:pointer}
 .grid{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:32px;align-items:start}
 .stage{background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:26px 28px 28px;box-shadow:var(--shadow);min-width:0}
 
-.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:28px}
+.steps{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:28px}
 .step{background:none;border:0;padding:0;text-align:left;display:grid;gap:8px;color:var(--muted);font-weight:600;font-size:14px}
 .s-bar{height:5px;border-radius:5px;background:var(--line);transition:background .25s}
 .step.done .s-bar,.step[aria-current="step"] .s-bar{background:var(--accent)}
@@ -224,7 +225,7 @@ dialog#settings::backdrop{background:rgba(14,17,40,.55);backdrop-filter:blur(3px
   .fields.two,.opts.cols2,.opts.cols3{grid-template-columns:minmax(0,1fr)}
   .step .s-l{display:none}
   .step[aria-current="step"] .s-l{display:inline}
-  .steps{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .steps{grid-template-columns:repeat(6,minmax(0,1fr))}
   .step[aria-current="step"]{grid-column:auto}
   .addon{grid-template-columns:auto minmax(0,1fr) 40px}
   .addon .kind,.addon .valbox{grid-column:2/3}
@@ -237,6 +238,9 @@ dialog#settings::backdrop{background:rgba(14,17,40,.55);backdrop-filter:blur(3px
   .srow{flex-wrap:wrap}
   .sin input.txt{width:150px}
 }
+textarea.ta{border:0;background:transparent;outline:0;width:100%;resize:vertical;min-height:66px;padding:10px 0;line-height:1.45}
+.inp.tall{height:auto;align-items:flex-start;padding:0 12px}
+.inv-wrap{margin-top:8px;padding:18px;border-radius:18px;background:var(--surface-2);border:1px solid var(--line);overflow:auto}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -324,11 +328,11 @@ dialog#settings::backdrop{background:rgba(14,17,40,.55);backdrop-filter:blur(3px
         <div class="fields two">
           <div class="field">
             <label for="f-pname">Project name <span style="color:var(--muted);font-weight:400">(optional)</span></label>
-            <div class="inp"><input id="f-pname" type="text" data-type="text" data-k="projectName" placeholder="Spring campaign cover"></div>
+            <div class="inp"><input id="f-pname" type="text" maxlength="80" data-type="text" data-k="projectName" placeholder="Spring campaign cover"></div>
           </div>
           <div class="field">
             <label for="f-cname">Client name <span style="color:var(--muted);font-weight:400">(optional)</span></label>
-            <div class="inp"><input id="f-cname" type="text" data-type="text" data-k="clientName" placeholder="Fern &amp; Co."></div>
+            <div class="inp"><input id="f-cname" type="text" maxlength="80" data-type="text" data-k="clientName" placeholder="Fern &amp; Co."></div>
           </div>
           <div class="field">
             <label for="f-type">What are you making?</label>
@@ -440,6 +444,43 @@ dialog#settings::backdrop{background:rgba(14,17,40,.55);backdrop-filter:blur(3px
           <button type="button" class="btn primary" id="copy-main">Copy quote</button>
           <button type="button" class="btn ghost" id="new-quote">Start a new quote</button>
         </div>
+      </section>
+
+      <!-- 6 INVOICE -->
+      <section class="pane" data-pane="5" aria-labelledby="h5" hidden>
+        <h2 id="h5">Create your invoice</h2>
+        <p class="lead">The invoice uses the price from your quote. Your own details are remembered on this device, so next time you only change the client and the number.</p>
+        <div class="sub-h" style="margin-top:0">Bill</div>
+        <div class="opts cols3" data-group="inv.kind" role="radiogroup" aria-label="What to bill"></div>
+        <div class="sub-h">Your details</div>
+        <div class="fields two">
+          <div class="field"><label for="i-fn">Your name or studio</label><div class="inp"><input id="i-fn" type="text" maxlength="80" data-type="text" data-k="inv.fromName" placeholder="Maya Rao Illustration"></div></div>
+          <div class="field"><label for="i-fe">Your email</label><div class="inp"><input id="i-fe" type="text" maxlength="80" data-type="text" data-k="inv.fromEmail" placeholder="hello@mayarao.com"></div></div>
+          <div class="field" style="grid-column:1/-1"><label for="i-fa">Your address or website</label><div class="inp tall"><textarea class="ta" id="i-fa" maxlength="300" data-type="text" data-k="inv.fromAddress" placeholder="Street, city, country"></textarea></div></div>
+        </div>
+        <div class="sub-h">Client details</div>
+        <div class="fields two">
+          <div class="field"><label for="i-cn">Client name</label><div class="inp"><input id="i-cn" type="text" maxlength="80" data-type="text" data-k="clientName" placeholder="Fern &amp; Co."></div></div>
+          <div class="field"><label for="i-ce">Client email</label><div class="inp"><input id="i-ce" type="text" maxlength="80" data-type="text" data-k="inv.toEmail" placeholder="accounts@fernco.com"></div></div>
+          <div class="field" style="grid-column:1/-1"><label for="i-ca">Client address</label><div class="inp tall"><textarea class="ta" id="i-ca" maxlength="300" data-type="text" data-k="inv.toAddress" placeholder="Street, city, country"></textarea></div></div>
+        </div>
+        <div class="sub-h">Invoice details</div>
+        <div class="fields two">
+          <div class="field"><label for="i-no">Invoice number</label><div class="inp"><input id="i-no" type="text" maxlength="30" data-type="text" data-k="inv.number"></div></div>
+          <div class="field"><label for="i-dt">Issue date</label><div class="inp"><input id="i-dt" type="date" data-type="text" data-k="inv.issued"></div></div>
+          <div class="field"><label for="i-due">Payment due</label><div class="inp"><select id="i-due" data-k="inv.dueDays"><option value="0">On receipt</option><option value="7">In 7 days</option><option value="14">In 14 days</option><option value="30">In 30 days</option><option value="45">In 45 days</option></select></div></div>
+          <div class="field" style="grid-column:1/-1"><label for="i-pay">How should the client pay you?</label><div class="inp tall"><textarea class="ta" id="i-pay" maxlength="500" data-type="text" data-k="inv.payInfo" placeholder="Bank name, account or UPI ID, PayPal email, payment link"></textarea></div><p class="hint">Saved only in this browser, never sent anywhere. Do not enter full card numbers.</p></div>
+          <div class="field" style="grid-column:1/-1"><label for="i-nt">Note to the client <span style="color:var(--muted);font-weight:400">(optional)</span></label><div class="inp tall"><textarea class="ta" id="i-nt" maxlength="500" data-type="text" data-k="inv.notes" placeholder="Thank you for working with me! Final files are sent once payment arrives."></textarea></div></div>
+        </div>
+        <div class="sub-h">Preview</div>
+        <div class="inv-wrap" id="inv-preview"></div>
+        <div class="actions" id="dl-actions" hidden>
+          <button type="button" class="btn primary" id="dl-pdf">Download PDF</button>
+          <button type="button" class="btn ghost" id="dl-html">Download as web page</button>
+        </div>
+        <p class="hint" id="dl-hint" style="margin-top:10px">The PDF uses standard Latin letters. If your names or addresses use another script, choose the web page file; open it and print to PDF.</p>
+        <div class="actions"><button type="button" class="btn ghost" id="clear-data">Clear saved details from this device</button></div>
+        <p class="note" id="dl-note" hidden>Downloads are not available in this view. Open the page in claude.ai to save your invoice, or select the preview above to copy it.</p>
       </section>
 
       <div class="foot">
@@ -560,6 +601,7 @@ var DEFAULT_CFG={
     {id:'high',label:'Premium',desc:'For demanding clients or big reach',value:1.3}
   ]
 };
+function todayISO(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
 function uid(){return Math.random().toString(36).slice(2,8)}
 function clone(o){return JSON.parse(JSON.stringify(o))}
 var DEFAULT_STATE={
@@ -573,29 +615,80 @@ var DEFAULT_STATE={
     {id:'a3',name:'Extra sketch options',kind:'hours',value:3,on:false},
     {id:'a4',name:'Process timelapse video',kind:'flat',value:50,on:false}
   ],
-  expenses:[],markup:0,tier:'std',discount:0,tax:0,deposit:50,minFee:100
+  expenses:[],markup:0,tier:'std',discount:0,tax:0,deposit:50,minFee:100,
+  inv:{fromName:'',fromEmail:'',fromAddress:'',toEmail:'',toAddress:'',number:'INV-001',issued:todayISO(),dueDays:14,kind:'full',payInfo:'',notes:''}
 };
 var cfg=clone(DEFAULT_CFG), S=clone(DEFAULT_STATE);
 var STORE='inkwell-v1';
+var KEEP=['currency','rateMode','manualRate','calc','tax','deposit','minFee','addons','inv'];
+function fin(v,d,lo,hi){v=typeof v==='number'?v:parseFloat(v);if(!isFinite(v)) return d;return Math.min(hi==null?1e9:hi,Math.max(lo==null?0:lo,v))}
+function str(v,d,max){return typeof v==='string'?v.slice(0,max||120):d}
+function oneOf(v,list,d){return list.indexOf(v)>-1?v:d}
+function cleanCfg(c){
+  var out=clone(DEFAULT_CFG);
+  if(!c||typeof c!=='object') return out;
+  out.adminPct=fin(c.adminPct,out.adminPct,0,100);
+  [['complexity','value',20],['clients','value',20],['durations','value',20],['tiers','value',20],['usage','pct',1000],['rush','pct',1000]].forEach(function(r){
+    var src=Array.isArray(c[r[0]])?c[r[0]]:[];
+    out[r[0]].forEach(function(def){
+      var m=src.filter(function(x){return x&&x.id===def.id})[0];
+      if(m) def[r[1]]=fin(m[r[1]],def[r[1]],0,r[2]);
+    });
+  });
+  if(Array.isArray(c.types)&&c.types.length){
+    var seen={},ts=[];
+    c.types.slice(0,40).forEach(function(t){
+      if(!t||typeof t!=='object') return;
+      var id=str(t.id,'',24).replace(/[^\w]/g,'');
+      if(!id||seen[id]) id=uid();
+      seen[id]=1;
+      ts.push({id:id,label:str(t.label,'Project type',40),hours:fin(t.hours,6,0,1000)});
+    });
+    if(ts.length) out.types=ts;
+  }
+  return out;
+}
+function cleanState(st){
+  var d=clone(DEFAULT_STATE),out={};
+  KEEP.forEach(function(k){out[k]=d[k]});
+  if(!st||typeof st!=='object') return out;
+  out.currency=CURRENCIES[st.currency]?st.currency:'USD';
+  out.rateMode=oneOf(st.rateMode,['help','know'],'help');
+  out.manualRate=fin(st.manualRate,d.manualRate);
+  var c=st.calc&&typeof st.calc==='object'?st.calc:{};
+  out.calc={income:fin(c.income,d.calc.income),costs:fin(c.costs,d.calc.costs),tax:fin(c.tax,d.calc.tax,0,60),hoursWeek:fin(c.hoursWeek,d.calc.hoursWeek,1,80),weeksOff:fin(c.weeksOff,d.calc.weeksOff,0,51),exp:oneOf(c.exp,EXP.map(function(e){return e.id}),'est')};
+  out.tax=fin(st.tax,d.tax,0,60);out.deposit=fin(st.deposit,d.deposit,0,100);out.minFee=fin(st.minFee,d.minFee);
+  if(Array.isArray(st.addons)){
+    out.addons=st.addons.slice(0,30).filter(function(a){return a&&typeof a==='object'}).map(function(a){
+      return {id:str(a.id,uid(),12).replace(/[^\w]/g,''),name:str(a.name,'Extra',60),kind:oneOf(a.kind,['hours','flat','percent'],'flat'),value:fin(a.value,0),on:false};
+    });
+  }
+  var i=st.inv&&typeof st.inv==='object'?st.inv:{},di=d.inv;
+  out.inv={fromName:str(i.fromName,'',80),fromEmail:str(i.fromEmail,'',80),fromAddress:str(i.fromAddress,'',300),toEmail:'',toAddress:'',
+    number:str(i.number,di.number,30),issued:todayISO(),dueDays:oneOf(fin(i.dueDays,14),[0,7,14,30,45],14),kind:'full',payInfo:str(i.payInfo,'',500),notes:str(i.notes,'',500)};
+  return out;
+}
 function load(){
   try{
-    var raw=localStorage.getItem(STORE); if(!raw) return;
-    var d=JSON.parse(raw);
-    if(d.cfg) cfg=Object.assign(clone(DEFAULT_CFG),d.cfg);
-    if(d.state) S=Object.assign(clone(DEFAULT_STATE),d.state);
-    S.calc=Object.assign(clone(DEFAULT_STATE.calc),S.calc||{});
-  }catch(e){}
+    var raw=localStorage.getItem(STORE);
+    if(raw){var d=JSON.parse(raw);cfg=cleanCfg(d&&d.cfg);var cs=cleanState(d&&d.state);KEEP.forEach(function(k){S[k]=cs[k]})}
+  }catch(e){try{localStorage.removeItem(STORE)}catch(x){}}
   S.step=0;
-  if(!CURRENCIES[S.currency]) S.currency='USD';
 }
 var saveT;
-function save(){clearTimeout(saveT);saveT=setTimeout(function(){try{localStorage.setItem(STORE,JSON.stringify({cfg:cfg,state:S}))}catch(e){}},300)}
+function save(){clearTimeout(saveT);saveT=setTimeout(function(){try{var keep={};KEEP.forEach(function(k){keep[k]=S[k]});localStorage.setItem(STORE,JSON.stringify({cfg:cfg,state:keep}))}catch(e){}},300)}
 
 /* ---------- helpers ---------- */
 function $(s,r){return (r||document).querySelector(s)}
 function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-function num(v){var x=parseFloat(v);return isFinite(x)?x:0}
+function num(v){var x=parseFloat(v);return isFinite(x)?Math.min(1e9,Math.max(-1e9,x)):0}
+function bound(t,v){
+  var mn=t.getAttribute&&t.getAttribute('min'),mx=t.getAttribute&&t.getAttribute('max');
+  if(mn!==null&&mn!==''&&v<+mn) v=+mn;
+  if(mx!==null&&mx!==''&&v>+mx) v=+mx;
+  return v;
+}
 function getP(o,p){return p.split('.').reduce(function(a,k){return a==null?a:a[k]},o)}
 function setP(o,p,v){var ks=p.split('.'),last=ks.pop();var t=ks.reduce(function(a,k){return a[k]},o);t[last]=v}
 function find(list,id){for(var i=0;i<list.length;i++){if(list[i].id===id) return list[i]}return list[0]}
@@ -612,46 +705,49 @@ function niceRound(v){var st=v>=10000?100:v>=1000?50:v>=100?5:1;return Math.roun
 
 /* ---------- calculation ---------- */
 function hourlyRate(){
-  if(S.rateMode==='know') return Math.max(0,S.manualRate);
-  var c=S.calc,tax=Math.min(Math.max(c.tax,0),60)/100;
-  var weeks=Math.max(1,52-Math.min(Math.max(c.weeksOff,0),51));
-  var h=Math.max(1,c.hoursWeek)*weeks;
-  var gross=(c.income*12)/(1-tax)+c.costs*12;
+  if(S.rateMode==='know') return fin(S.manualRate,0,0,1e7);
+  var c=S.calc||{},tax=fin(c.tax,0,0,60)/100;
+  var weeks=Math.max(1,52-fin(c.weeksOff,0,0,51));
+  var h=fin(c.hoursWeek,20,1,80)*weeks;
+  var gross=(fin(c.income,0,0,1e9)*12)/(1-tax)+fin(c.costs,0,0,1e9)*12;
   var adj=find(EXP,c.exp).adj;
-  return Math.max(0,Math.round(gross/h*(1+adj/100)));
+  return fin(Math.round(gross/h*(1+adj/100)),0,0,1e7);
 }
 function tierMult(){return find(cfg.tiers,S.tier).value}
 function compute(tm){
+  tm=fin(tm,1,0,20);
   var rate=hourlyRate();
   var cx=find(cfg.complexity,S.complexity),cl=find(cfg.clients,S.client),us=find(cfg.usage,S.usage),du=find(cfg.durations,S.duration),ru=find(cfg.rush,S.rush);
-  var baseHours=Math.max(0,S.pieces)*Math.max(0,S.hours)*cx.value;
-  var workHours=baseHours*(1+cfg.adminPct/100);
-  var creative=Math.round(workHours*rate*cl.value);
-  var extraRounds=Math.max(0,S.expectedRounds-S.includedRounds);
-  var revHours=extraRounds*Math.max(0,S.extraRoundHours);
+  var pcs=fin(S.pieces,1,0,1e5)||1;
+  var baseHours=pcs*fin(S.hours,0,0,1e5)*fin(cx.value,1,0,20);
+  var workHours=baseHours*(1+fin(cfg.adminPct,0,0,100)/100);
+  var creative=Math.round(workHours*rate*fin(cl.value,1,0,20));
+  var extraRounds=Math.max(0,fin(S.expectedRounds,0,0,100)-fin(S.includedRounds,0,0,100));
+  var revHours=extraRounds*fin(S.extraRoundHours,0,0,1000);
   var revisions=Math.round(revHours*rate);
-  var dur=us.fixedDuration?1:du.value;
-  var license=Math.round(creative*us.pct/100*dur);
-  var rush=Math.round((creative+revisions)*ru.pct/100);
+  var dur=us.fixedDuration?1:fin(du.value,1,0,20);
+  var license=Math.round(creative*fin(us.pct,0,0,1000)/100*dur);
+  var rush=Math.round((creative+revisions)*fin(ru.pct,0,0,1000)/100);
   var extras=0,extraHours=0;
   S.addons.forEach(function(a){
     if(!a.on) return;
-    if(a.kind==='hours'){extras+=a.value*rate;extraHours+=a.value}
-    else if(a.kind==='flat'){extras+=a.value}
-    else{extras+=creative*a.value/100}
+    var v=fin(a.value,0,0,1e9);
+    if(a.kind==='hours'){extras+=v*rate;extraHours+=v}
+    else if(a.kind==='flat'){extras+=v}
+    else{extras+=creative*v/100}
   });
   extras=Math.round(extras);
-  var costs=Math.round(S.expenses.reduce(function(s,e){return s+(e.amount||0)},0)*(1+Math.max(0,S.markup)/100));
+  var costs=Math.round(S.expenses.reduce(function(t,e){return t+fin(e.amount,0,0,1e9)},0)*(1+fin(S.markup,0,0,1000)/100));
   var raw={creative:creative,revisions:revisions,license:license,rush:rush,extras:extras};
   var sc={},fee=0,k;
   for(k in raw){sc[k]=Math.round(raw[k]*tm);fee+=sc[k]}
-  var minfee=Math.max(0,Math.round(S.minFee)-fee); if(fee===0) minfee=0;
+  var minfee=Math.max(0,Math.round(fin(S.minFee,0,0,1e9))-fee); if(fee===0) minfee=0;
   fee+=minfee;
-  var discount=Math.round(fee*Math.min(100,Math.max(0,S.discount))/100);
+  var discount=Math.round(fee*fin(S.discount,0,0,100)/100);
   var subtotal=fee-discount+costs;
-  var tax=Math.round(subtotal*Math.max(0,S.tax)/100);
+  var tax=Math.round(subtotal*fin(S.tax,0,0,100)/100);
   var total=subtotal+tax;
-  var deposit=Math.round(total*Math.min(100,Math.max(0,S.deposit))/100);
+  var deposit=Math.round(total*fin(S.deposit,0,0,100)/100);
   var allHours=workHours+revHours+extraHours;
   return {rate:rate,seg:{creative:sc.creative,revisions:sc.revisions,license:sc.license,rush:sc.rush,extras:sc.extras,expenses:costs,minfee:minfee},
     gross:fee+costs,fee:fee,discount:discount,subtotal:subtotal,tax:tax,total:total,deposit:deposit,balance:total-deposit,
@@ -659,6 +755,7 @@ function compute(tm){
     us:us,du:du,ru:ru,cx:cx,cl:cl};
 }
 
+var INV_KINDS=[{id:'full',label:'Full amount',desc:'The whole project'},{id:'deposit',label:'Deposit',desc:'Upfront payment to start'},{id:'balance',label:'Final balance',desc:'What remains after the deposit'}];
 /* ---------- rendering: choices ---------- */
 function setGroup(path,items,selected,meta){
   var el=$('[data-group="'+path+'"]'); if(!el) return;
@@ -677,6 +774,7 @@ function renderChoices(){
   setGroup('usage',cfg.usage,S.usage,function(it){return it.pct===0?'No fee':'+'+n2(it.pct)+'%'});
   setGroup('duration',cfg.durations,S.duration,function(it){return '×'+n2(it.value)});
   setGroup('rush',cfg.rush,S.rush,function(it){return it.pct===0?'No fee':'+'+n2(it.pct)+'%'});
+  setGroup('inv.kind',INV_KINDS,S.inv.kind,function(it){return '<span data-inv-amt="'+it.id+'"></span>'});
   setGroup('tier',cfg.tiers,S.tier,function(it){return '<span data-tier-total="'+esc(it.id)+'"></span>'});
 }
 var UNITS={hours:'h',percent:'%'};
@@ -685,7 +783,7 @@ function renderAddons(){
   $('#addons').innerHTML=S.addons.map(function(a,i){
     return '<div class="row addon" data-i="'+i+'">'
     +'<label class="check"><input type="checkbox" data-addon="on" '+(a.on?'checked':'')+' aria-label="Include '+esc(a.name)+'"><span class="box"></span></label>'
-    +'<input type="text" data-addon="name" value="'+esc(a.name)+'" aria-label="Extra name">'
+    +'<input type="text" maxlength="60" data-addon="name" value="'+esc(a.name)+'" aria-label="Extra name">'
     +'<select class="kind" data-addon="kind" aria-label="How this extra is charged"><option value="hours"'+(a.kind==='hours'?' selected':'')+'>Hours of work</option><option value="flat"'+(a.kind==='flat'?' selected':'')+'>Flat fee</option><option value="percent"'+(a.kind==='percent'?' selected':'')+'>% of artwork</option></select>'
     +'<div class="valbox"><input type="number" inputmode="decimal" min="0" step="any" data-addon="value" value="'+a.value+'" aria-label="Amount"><span class="unit" data-kind="'+a.kind+'">'+unitFor(a.kind)+'</span></div>'
     +'<button type="button" class="icon-btn" data-addon-del aria-label="Remove '+esc(a.name)+'">×</button></div>';
@@ -694,15 +792,15 @@ function renderAddons(){
 function renderExpenses(){
   $('#expenses').innerHTML=S.expenses.map(function(e,i){
     return '<div class="row expense" data-i="'+i+'">'
-    +'<input type="text" data-exp="name" value="'+esc(e.name)+'" placeholder="e.g. Stock reference photos" aria-label="Cost name">'
+    +'<input type="text" maxlength="60" data-exp="name" value="'+esc(e.name)+'" placeholder="e.g. Stock reference photos" aria-label="Cost name">'
     +'<div class="inp amt" style="height:44px;border-radius:10px"><span class="pre cur">'+CURRENCIES[S.currency].sym+'</span><input type="number" inputmode="decimal" min="0" step="any" data-exp="amount" value="'+(e.amount||'')+'" aria-label="Cost amount"></div>'
     +'<button type="button" class="icon-btn" data-exp-del aria-label="Remove cost">×</button></div>';
   }).join('');
 }
 
 /* ---------- steps ---------- */
-var STEPS=['Rate','Project','Usage','Extras','Finish'];
-var NEXT=['Continue to project','Continue to usage','Continue to extras','Continue to finish','Copy quote'];
+var STEPS=['Rate','Project','Usage','Extras','Finish','Invoice'];
+var NEXT=['Continue to project','Continue to usage','Continue to extras','Continue to finish','Create invoice','Download PDF'];
 function showStep(n,scroll){
   S.step=Math.max(0,Math.min(STEPS.length-1,n));
   $$('.pane').forEach(function(p){p.hidden=(+p.dataset.pane!==S.step)});
@@ -728,7 +826,8 @@ function tweenTotal(v){
   }
   tw=requestAnimationFrame(step);
 }
-function sync(){
+function sync(){try{syncInner()}catch(e){if(window.console) console.error(e);toast('Something went wrong updating the quote. Your inputs are safe.')}}
+function syncInner(){
   var cur=CURRENCIES[S.currency];
   $$('.cur').forEach(function(el){el.textContent=cur.sym});
   $$('#addons .unit').forEach(function(u){u.textContent=unitFor(u.dataset.kind)});
@@ -753,11 +852,12 @@ function sync(){
 
   cfg.tiers.forEach(function(t){var el=$('[data-tier-total="'+t.id+'"]');if(el) el.textContent=money(compute(t.value).total)});
 
+  [['full',q.total],['deposit',q.deposit],['balance',q.balance]].forEach(function(a){var el=$('[data-inv-amt="'+a[0]+'"]');if(el) el.textContent=money(a[1])});
   tweenTotal(q.total);
   $('#m-total').textContent=money(q.total);
   $('#tier-tag').textContent=find(cfg.tiers,S.tier).label;
   $('#slip-title').textContent=S.projectName?S.projectName:'Your quote';
-  $('#total-sub').textContent=q.total===0?'Add your rate and project details to see a price.':(S.tax>0?'Includes '+n2(S.tax)+'% tax':'Before tax');
+  $('#total-sub').textContent=q.total===0?(hourlyRate()<=0?'Enter your hourly rate to see a price.':'Enter hours per piece on the Project step to see a price.'):(S.tax>0?'Includes '+n2(S.tax)+'% tax':'Before tax');
   var sum=q.gross;
   Object.keys(q.seg).forEach(function(k){
     var v=q.seg[k],pct=sum>0?v/sum*100:0;
@@ -772,7 +872,8 @@ function sync(){
   $('#s-bal').textContent=money(q.balance);
 
   var eff=$('#eff');eff.className='eff';
-  if(q.rate<=0||q.hours<=0){eff.innerHTML='<b>Set your rate first</b>Enter an hourly rate and some hours to see how this job pays.'}
+  if(q.rate<=0){eff.innerHTML='<b>Set your rate first</b>Enter an hourly rate on the Rate step to see a price.'}
+  else if(q.hours<=0){eff.innerHTML='<b>Add the hours</b>Enter hours per piece on the Project step to see a price.'}
   else{
     var ratio=q.eff/q.rate,hv=money(q.eff)+' an hour';
     if(ratio>=0.97){eff.classList.add('ok');eff.innerHTML='<b>'+hv+'</b>You would earn at or above your rate of '+money(q.rate)+' on this job.'}
@@ -780,6 +881,7 @@ function sync(){
     else{eff.classList.add('low');eff.innerHTML='<b>'+hv+'</b>Well under your rate of '+money(q.rate)+'. Consider a higher option, fewer free changes or a wider usage fee.'}
   }
   $('#quote-text').value=quoteText(q);
+  renderInvoice();
   save();
 }
 
@@ -809,6 +911,152 @@ function quoteText(q){
   return L.join('\n');
 }
 
+
+/* ---------- invoice ---------- */
+var INV_CSS='.inv{background:#fff;color:#1b1f3a;font:14px/1.5 -apple-system,"Segoe UI",Helvetica,Arial,sans-serif;max-width:780px;margin:0 auto;padding:44px 48px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.12)}.inv *{box-sizing:border-box}.inv-top{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:flex-start;margin-bottom:34px}.inv h1{margin:0;font-size:38px;letter-spacing:-.02em;line-height:1;color:#3a4bdb}.inv-no{margin-top:8px;color:#646a8c;font-size:15px}.inv-dates{display:grid;gap:6px;font-size:14px}.inv-dates div{display:flex;justify-content:space-between;gap:28px}.inv-dates span{color:#646a8c}.inv-parties{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:30px}.inv h4{margin:0 0 6px;font-size:13px;color:#646a8c;font-weight:600}.inv p{margin:0}.inv .ph{color:#a2a7c2;font-style:italic}.inv-t{width:100%;border-collapse:collapse;margin-bottom:8px}.inv-t th{text-align:left;font-size:13px;color:#646a8c;font-weight:600;padding:10px 0;border-bottom:2px solid #1b1f3a}.inv-t th.r,.inv-t td.r{text-align:right;white-space:nowrap;padding-left:20px}.inv-t td{padding:14px 0;border-bottom:1px solid #e3e6f2;vertical-align:top}.inv-t small{display:block;color:#646a8c;font-size:13px;margin-top:2px}.inv-tot{margin-left:auto;width:min(320px,100%);margin-top:12px}.inv-tot div{display:flex;justify-content:space-between;padding:6px 0}.inv-tot .b{font-weight:700;border-top:1px solid #e3e6f2;margin-top:4px;padding-top:10px}.inv-due{display:flex;justify-content:space-between;align-items:center;gap:16px;background:#e8ebfe;color:#2a38b8;border-radius:12px;padding:16px 20px;margin:20px 0 6px;font-weight:600}.inv-due b{font-size:26px;letter-spacing:-.02em}.inv-note{color:#646a8c;font-size:13px;margin:6px 0 0;text-align:right}.inv-sec{margin-top:26px}.inv-foot{margin-top:34px;padding-top:16px;border-top:1px solid #e3e6f2;color:#646a8c;font-size:13px}@media(max-width:560px){.inv{padding:24px 20px}.inv-parties{grid-template-columns:1fr}}';
+(function(){var st=document.createElement('style');st.textContent=INV_CSS;document.head.appendChild(st)})();
+
+function fmtDate(iso,add){var p=(/^\d{4}-\d{2}-\d{2}$/.test(iso||'')?iso:todayISO()).split('-');var d=new Date(+p[0],+p[1]-1,+p[2]+(add||0));if(isNaN(d.getTime())) d=new Date();return d.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}
+function nl2br(t){return esc(t).replace(/\n/g,'<br>')}
+function bumpNumber(n){return String(n).replace(/(\d+)(?!.*\d)/,function(m){var x=String(+m+1);while(x.length<m.length) x='0'+x;return x})}
+function invData(){
+  var q=compute(tierMult()),type=find(cfg.types,S.typeId),i=S.inv,lines=[];
+  lines.push({t:type.label+(S.projectName?' - '+S.projectName:''),d:S.pieces+' piece'+(S.pieces===1?'':'s')+', '+q.cx.label.toLowerCase()+' level of detail',a:q.seg.creative});
+  if(q.seg.revisions>0) lines.push({t:'Extra revisions',d:q.extraRounds+' round'+(q.extraRounds===1?'':'s')+' beyond the '+S.includedRounds+' included',a:q.seg.revisions});
+  if(q.seg.license>0) lines.push({t:'Usage license',d:q.us.label+(q.us.fixedDuration?', all rights':', '+q.du.label.toLowerCase()),a:q.seg.license});
+  if(q.seg.rush>0) lines.push({t:'Rush fee',d:q.ru.label+' turnaround ('+q.ru.desc.toLowerCase()+')',a:q.seg.rush});
+  if(q.seg.extras>0) lines.push({t:'Extras',d:S.addons.filter(function(a){return a.on}).map(function(a){return a.name}).join(', '),a:q.seg.extras});
+  if(q.seg.minfee>0) lines.push({t:'Minimum project fee',d:'Adjustment to reach the minimum job fee',a:q.seg.minfee});
+  if(q.seg.expenses>0) lines.push({t:'Materials and costs',d:S.expenses.filter(function(e){return e.name}).map(function(e){return e.name}).join(', '),a:q.seg.expenses});
+  var rows=[{l:'Subtotal',v:q.fee+q.seg.expenses}];
+  if(q.discount>0) rows.push({l:'Discount',v:-q.discount});
+  if(q.tax>0) rows.push({l:'Tax ('+n2(S.tax)+'%)',v:q.tax});
+  rows.push({l:'Project total',v:q.total,b:true});
+  var due,note='';
+  if(i.kind==='deposit'){due={l:'Deposit due ('+n2(S.deposit)+'%)',v:q.deposit};note='The remaining balance of '+money(q.balance)+' is due on delivery.'}
+  else if(i.kind==='balance'){rows.push({l:'Deposit already paid',v:-q.deposit});due={l:'Balance due',v:q.balance}}
+  else due={l:'Amount due',v:q.total};
+  return {q:q,lines:lines,rows:rows,due:due,note:note,issued:fmtDate(i.issued),dueText:i.dueDays>0?fmtDate(i.issued,i.dueDays):'On receipt'};
+}
+function party(h,name,email,addr,ph){
+  var out='<div><h4>'+h+'</h4><p>'+(name?'<b>'+esc(name)+'</b>':'<b class="ph">'+ph+'</b>');
+  if(email) out+='<br>'+esc(email);
+  if(addr) out+='<br>'+nl2br(addr);
+  return out+'</p></div>';
+}
+function invoiceHTML(){
+  var d=invData(),i=S.inv;
+  var h='<div class="inv"><div class="inv-top"><div><h1>Invoice</h1><div class="inv-no">'+esc(i.number||'')+'</div></div>'
+   +'<div class="inv-dates"><div><span>Issued</span><b>'+esc(d.issued)+'</b></div><div><span>Due</span><b>'+esc(d.dueText)+'</b></div></div></div>'
+   +'<div class="inv-parties">'+party('From',i.fromName,i.fromEmail,i.fromAddress,'Your name')+party('Bill to',S.clientName,i.toEmail,i.toAddress,'Client name')+'</div>'
+   +'<table class="inv-t"><thead><tr><th>Description</th><th class="r">Amount</th></tr></thead><tbody>'
+   +d.lines.map(function(l){return '<tr><td><b>'+esc(l.t)+'</b>'+(l.d?'<small>'+esc(l.d)+'</small>':'')+'</td><td class="r">'+money(l.a)+'</td></tr>'}).join('')
+   +'</tbody></table><div class="inv-tot">'
+   +d.rows.map(function(r){return '<div'+(r.b?' class="b"':'')+'><span>'+esc(r.l)+'</span><span>'+money(r.v)+'</span></div>'}).join('')
+   +'</div><div class="inv-due"><span>'+esc(d.due.l)+'</span><b>'+money(d.due.v)+'</b></div>'
+   +(d.note?'<p class="inv-note">'+esc(d.note)+'</p>':'');
+  if(i.payInfo) h+='<div class="inv-sec"><h4>Payment details</h4><p>'+nl2br(i.payInfo)+'</p></div>';
+  if(i.notes) h+='<div class="inv-sec"><h4>Notes</h4><p>'+nl2br(i.notes)+'</p></div>';
+  return h+'<div class="inv-foot">Thank you for your business.</div></div>';
+}
+function renderInvoice(){var el=$('#inv-preview');if(el) el.innerHTML=invoiceHTML()}
+function fileBase(){
+  var c=(S.clientName||S.projectName||'').replace(/[^\w\-]+/g,'-').replace(/^-+|-+$/g,'');
+  var n=(S.inv.number||'draft').replace(/[^\w\-]+/g,'-');
+  return 'Invoice-'+n+(c?'-'+c:'');
+}
+function fullHTML(){
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Invoice '+esc(S.inv.number||'')+'</title><style>body{margin:0;background:#eef0f7;padding:32px 16px}@page{margin:14mm}@media print{body{background:#fff;padding:0}.inv{box-shadow:none;padding:0;max-width:none}}'+INV_CSS+'</style></head><body>'+invoiceHTML()+'</body></html>';
+}
+function pdfMoney(v){
+  var pre={USD:'$',GBP:'\u00A3',EUR:'EUR ',INR:'Rs. ',CAD:'C$',AUD:'A$'}[S.currency]||'';
+  return (v<0?'-':'')+pre+Math.abs(Math.round(v)).toLocaleString(CURRENCIES[S.currency].loc);
+}
+function buildPDF(){
+  var J=window.jspdf;if(!J||!J.jsPDF) return null;
+  var doc=new J.jsPDF({unit:'mm',format:'a4'}),d=invData(),i=S.inv;
+  var M=18,R=192,y=24,ink=[27,31,58],mut=[100,106,140],acc=[58,75,219];
+  function safe(t){return String(t).replace(/[^\x20-\x7E\u00A0-\u00FF\n]/g,'?')}
+  var _tx=doc.text.bind(doc),_sp=doc.splitTextToSize.bind(doc);
+  doc.text=function(t,x,yy,o){return _tx(Array.isArray(t)?t.map(safe):safe(t),x,yy,o)};
+  doc.splitTextToSize=function(t,w){return _sp(safe(t),w)};
+  function col(c){doc.setTextColor(c[0],c[1],c[2])}
+  function guard(h){if(y+h>280){doc.addPage();y=22}}
+  doc.setFont('helvetica','bold');doc.setFontSize(28);col(acc);doc.text('Invoice',M,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(11);col(mut);doc.text(String(i.number||''),M,y+8);
+  doc.text('Issued',R-62,y-6);doc.text('Due',R-62,y);
+  doc.setFont('helvetica','bold');col(ink);doc.text(d.issued,R,y-6,{align:'right'});doc.text(d.dueText,R,y,{align:'right'});
+  y+=24;
+  function block(x,h,name,email,addr,ph){
+    var yy=y;doc.setFont('helvetica','bold');doc.setFontSize(9.5);col(mut);doc.text(h,x,yy);yy+=5.5;
+    doc.setFontSize(11);col(name?ink:mut);doc.text(name||ph,x,yy);yy+=5.5;
+    doc.setFont('helvetica','normal');doc.setFontSize(10);col(ink);
+    var t=[];if(email) t.push(email);if(addr) t=t.concat(doc.splitTextToSize(addr,72));
+    t.forEach(function(l){doc.text(l,x,yy);yy+=5});
+    return yy;
+  }
+  var y1=block(M,'From',i.fromName,i.fromEmail,i.fromAddress,'Your name');
+  var y2=block(M+96,'Bill to',S.clientName,i.toEmail,i.toAddress,'Client name');
+  y=Math.max(y1,y2)+10;
+  doc.setFont('helvetica','bold');doc.setFontSize(9.5);col(mut);doc.text('Description',M,y);doc.text('Amount',R,y,{align:'right'});
+  y+=3;doc.setDrawColor(27,31,58);doc.setLineWidth(.5);doc.line(M,y,R,y);y+=7;
+  d.lines.forEach(function(l){
+    var sub=l.d?doc.splitTextToSize(l.d,120):[];
+    guard(10+sub.length*5);
+    doc.setFont('helvetica','bold');doc.setFontSize(10.5);col(ink);doc.text(l.t,M,y);
+    doc.text(pdfMoney(l.a),R,y,{align:'right'});
+    doc.setFont('helvetica','normal');doc.setFontSize(9);col(mut);
+    sub.forEach(function(t){y+=4.6;doc.text(t,M,y)});
+    y+=4;doc.setDrawColor(227,230,242);doc.setLineWidth(.25);doc.line(M,y,R,y);y+=7;
+  });
+  d.rows.forEach(function(r){
+    guard(9);
+    doc.setFont('helvetica',r.b?'bold':'normal');doc.setFontSize(10.5);col(ink);
+    doc.text(r.l,R-70,y);doc.text(pdfMoney(r.v),R,y,{align:'right'});y+=7;
+  });
+  y+=4;guard(22);
+  doc.setFillColor(232,235,254);doc.roundedRect(M,y,R-M,16,3,3,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(11);col(acc);doc.text(d.due.l,M+6,y+10);
+  doc.setFontSize(15);doc.text(pdfMoney(d.due.v),R-6,y+10.5,{align:'right'});y+=22;
+  if(d.note){doc.setFont('helvetica','normal');doc.setFontSize(9.5);col(mut);doc.text(d.note,R,y-3,{align:'right'});y+=4}
+  function section(h,t){
+    var ls=doc.splitTextToSize(t,R-M);guard(10+ls.length*5);
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);col(mut);doc.text(h,M,y);y+=5.5;
+    doc.setFont('helvetica','normal');doc.setFontSize(10);col(ink);ls.forEach(function(l){doc.text(l,M,y);y+=5});y+=6;
+  }
+  y+=4;
+  if(i.payInfo) section('Payment details',i.payInfo);
+  if(i.notes) section('Notes',i.notes);
+  guard(14);doc.setDrawColor(227,230,242);doc.line(M,y,R,y);y+=7;
+  doc.setFont('helvetica','normal');doc.setFontSize(9.5);col(mut);doc.text('Thank you for your business.',M,y);
+  return doc.output('arraybuffer');
+}
+var dl=null;
+function showDl(){$('#dl-actions').hidden=!dl;$('#dl-note').hidden=!!dl}
+try{
+  if(window.claude&&window.claude.use) window.claude.use('downloads').then(function(d){dl=d;showDl()},function(){showDl()});
+  else showDl();
+}catch(e){showDl()}
+function dlFile(ext){
+  if(!dl){toast('Downloads are not available in this view');return}
+  var data;
+  if(ext==='pdf'){
+    try{data=buildPDF()}catch(e){data=null}
+    if(!data){toast('The PDF tool did not load. Try the web page download.');return}
+  }else data=fullHTML();
+  dl.save({filename:fileBase()+'.'+ext,data:data}).then(function(){toast('Invoice saved')},function(e){
+    if(e&&e.code==='declined') return;
+    toast(e&&e.code==='rate_limited'?'Finish the open save prompt first':'Could not save the file');
+  });
+}
+$('#clear-data').addEventListener('click',function(){
+  try{localStorage.removeItem(STORE)}catch(e){}
+  cfg=clone(DEFAULT_CFG);var d=clone(DEFAULT_STATE);KEEP.forEach(function(k){S[k]=d[k]});
+  hydrate();sync();toast('Saved details cleared from this device');
+});
+$('#dl-pdf').addEventListener('click',function(){dlFile('pdf')});
+$('#dl-html').addEventListener('click',function(){dlFile('html')});
+
 /* ---------- toast + copy ---------- */
 var tt;
 function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('show')},2200)}
@@ -835,7 +1083,7 @@ function renderSettings(){
   h+=sgroup('Admin and communication','Extra time added to every project for emails, calls and file handling.',srow('adminPct','Added to your estimated hours','%'));
   h+=sgroup('Project types','Rename them, set how many hours a typical piece takes, or add your own.',
     cfg.types.map(function(t,i){
-      return '<div class="srow"><span class="sin"><input class="txt" type="text" data-cfg="types.'+i+'.label" value="'+esc(t.label)+'" aria-label="Project type name"></span><span class="sin"><input type="number" min="0" step="any" data-cfg="types.'+i+'.hours" value="'+t.hours+'" aria-label="Typical hours">h<button type="button" class="icon-btn sdel" data-type-del="'+i+'" aria-label="Remove '+esc(t.label)+'">×</button></span></div>';
+      return '<div class="srow"><span class="sin"><input class="txt" type="text" maxlength="40" data-cfg="types.'+i+'.label" value="'+esc(t.label)+'" aria-label="Project type name"></span><span class="sin"><input type="number" min="0" step="any" data-cfg="types.'+i+'.hours" value="'+t.hours+'" aria-label="Typical hours">h<button type="button" class="icon-btn sdel" data-type-del="'+i+'" aria-label="Remove '+esc(t.label)+'">×</button></span></div>';
     }).join('')+'<button type="button" class="add-link" id="add-type">Add a project type</button>');
   h+=sgroup('Detail level','Multiplies your hours. 1 means your estimate as entered.',cfg.complexity.map(function(c,i){return srow('complexity.'+i+'.value',c.label,'×')}).join(''));
   h+=sgroup('Client type','Multiplies the artwork price. Bigger budgets can pay more for the same drawing.',cfg.clients.map(function(c,i){return srow('clients.'+i+'.value',c.label,'×')}).join(''));
@@ -867,6 +1115,7 @@ function newQuote(){
   S.typeId=cfg.types.some(function(t){return t.id===d.typeId})?d.typeId:cfg.types[0].id;
   S.hours=find(cfg.types,S.typeId).hours;
   S.expenses=[];S.addons.forEach(function(a){a.on=false});
+  S.inv.toEmail='';S.inv.toAddress='';S.inv.kind='full';S.inv.issued=todayISO();S.inv.number=bumpNumber(S.inv.number);
   hydrate();showStep(0,true);sync();toast('Fresh quote ready');
 }
 
@@ -907,14 +1156,15 @@ $('#add-expense').addEventListener('click',function(){
 document.addEventListener('input',function(e){
   var t=e.target;
   if(t.dataset.k){
-    setP(S,t.dataset.k,t.dataset.type==='text'?t.value:num(t.value));
+    setP(S,t.dataset.k,t.dataset.type==='text'?t.value:bound(t,num(t.value)));
+    $$('[data-k="'+t.dataset.k+'"]').forEach(function(x){if(x!==t) x.value=t.value});
     sync();return;
   }
   var row=t.closest('#addons .row');
   if(row&&t.dataset.addon){
     var a=S.addons[+row.dataset.i],f=t.dataset.addon;
     if(f==='on') a.on=t.checked;
-    else if(f==='value') a.value=num(t.value);
+    else if(f==='value') a.value=bound(t,num(t.value));
     else{a[f]=t.value}
     if(f==='kind'){var u=$('.unit',row);u.dataset.kind=a.kind;u.textContent=unitFor(a.kind)}
     sync();return;
@@ -922,12 +1172,12 @@ document.addEventListener('input',function(e){
   row=t.closest('#expenses .row');
   if(row&&t.dataset.exp){
     var ex=S.expenses[+row.dataset.i];
-    ex[t.dataset.exp]=t.dataset.exp==='amount'?num(t.value):t.value;
+    ex[t.dataset.exp]=t.dataset.exp==='amount'?bound(t,num(t.value)):t.value;
     sync();return;
   }
   if(t.dataset.cfg){
     var isTxt=t.classList.contains('txt');
-    setP(cfg,t.dataset.cfg,isTxt?t.value:num(t.value));
+    setP(cfg,t.dataset.cfg,isTxt?t.value.slice(0,40):Math.min(1e6,bound(t,num(t.value))));
     renderChoices();sync();return;
   }
 });
@@ -942,7 +1192,7 @@ $('#cur').addEventListener('change',function(){
   toast('Amounts converted at approximate rates. Check them.');
 });
 $('#back').addEventListener('click',function(){showStep(S.step-1,true)});
-$('#next').addEventListener('click',function(){if(S.step===STEPS.length-1) copyQuote(); else showStep(S.step+1,true)});
+$('#next').addEventListener('click',function(){if(S.step===STEPS.length-1) dlFile('pdf'); else showStep(S.step+1,true)});
 $('#copy-slip').addEventListener('click',copyQuote);
 $('#copy-main').addEventListener('click',copyQuote);
 $('#new-quote').addEventListener('click',newQuote);
@@ -970,6 +1220,7 @@ $('#btn-theme').addEventListener('click',function(){
   try{localStorage.setItem('inkwell-theme',nx)}catch(e){}
 });
 
+window.addEventListener('error',function(){try{toast('Something went wrong. Your inputs are safe. Refresh if it keeps happening.')}catch(e){}});
 /* init */
 load();hydrate();showStep(0);sync();
 })();
